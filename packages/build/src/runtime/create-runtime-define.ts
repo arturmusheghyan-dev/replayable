@@ -26,7 +26,7 @@ export function createRuntimeDefine(
       localization: variant.localization,
       network: variant.network,
       params: variant.params,
-      screen: variant.screen,
+      screen: profile.screen,
       store: variant.store,
       version: variant.version,
     },

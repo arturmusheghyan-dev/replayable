@@ -22,7 +22,7 @@ import type { ExportDirectories } from '#types/directories.js';
 export async function resolveExportVariant(
   directories: ExportDirectories,
   variant: PlayableVariant,
-  config: Pick<ReplayableConfig, 'name' | 'export'>,
+  config: Pick<ReplayableConfig, 'name' | 'export' | 'networks'>,
 ): Promise<ExportVariantContext> {
   const buildDirectory = join(directories.buildOutput, variant.id);
   const htmlFile = join(buildDirectory, PLAYABLE_HTML_FILE);
@@ -44,11 +44,12 @@ export async function resolveExportVariant(
  */
 function resolveExportFileName(
   variant: PlayableVariant,
-  config: Pick<ReplayableConfig, 'name' | 'export'>,
+  config: Pick<ReplayableConfig, 'name' | 'export' | 'networks'>,
 ): string {
   const values: ExportFilenameContext = {
     name: config.name,
     network: variant.network,
+    exportName: config.networks[variant.network]?.exportName ?? variant.network,
     version: variant.version,
     language: variant.localization.language,
   };
@@ -60,6 +61,7 @@ function resolveExportFileName(
 
   // Extensions belong to the destination network, regardless of naming strategy.
   switch (variant.network) {
+    case 'adn':
     case 'applovin':
     case 'meta':
     case 'moloco':
@@ -69,6 +71,8 @@ function resolveExportFileName(
     case 'google':
     case 'liftoff':
     case 'mintegral':
+    case 'snapchat':
+    case 'tiktok':
       return `${artifactName}.zip`;
     default:
       throw new Error(`Unsupported export network: ${String(variant.network)}.`);

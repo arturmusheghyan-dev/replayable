@@ -13,6 +13,9 @@ it.each([true, false])('resolves controls with authored visibility %s', (enabled
     networks: {
       preview: {},
       applovin: {},
+      adn: {},
+      tiktok: {},
+      snapchat: {},
       meta: {},
       google: {},
       liftoff: {},

@@ -54,6 +54,7 @@ export interface RuntimeLocalizationConfig {
 
 /** Delivery network selected for the active playable variant. */
 export type RuntimeNetwork =
+  | 'adn'
   | 'applovin'
   | 'google'
   | 'liftoff'
@@ -61,6 +62,8 @@ export type RuntimeNetwork =
   | 'mintegral'
   | 'moloco'
   | 'preview'
+  | 'snapchat'
+  | 'tiktok'
   | 'unity';
 
 /** Resolved primitive or one-level group of primitive playable parameter values. */

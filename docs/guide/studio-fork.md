@@ -1,10 +1,10 @@
 # Studio fork releases and analytics
 
-The maintained Studio engine is `arturmusheghyan-dev/replayable`, branch `main`. It includes the Studio parameter definitions and metadata from `feat/studio-params` together with analytics from `analytics-posthog`. The old feature branches remain references. Do not merge them wholesale over newer parameter support.
+The maintained Studio engine is `arturmusheghyan-dev/replayable`, branch `main`. It includes the Studio parameter definitions and metadata from `feat/studio-params` together with analytics from `analytics-posthog` and Helix, TikTok and Snapchat delivery support. The old feature branches remain references. Do not merge them wholesale over newer parameter support.
 
 ## Distribution
 
-Studio consumers install exact GitHub Release archive URLs, not Git branches or upstream npm packages. The combined release is `studio-preview.3`, package version `0.1.0-studio-preview.3`. It adds independent console logging and sending controls to the parameters and analytics available in preview 2. Source manifests retain the upstream source version; only staged archive manifests receive the fork version and fixed internal archive URLs. All eleven public packages use one fork version, including Pixi. Archives are private for npm publication, but installable through their GitHub URLs.
+Studio consumers install exact GitHub Release archive URLs, not Git branches or upstream npm packages. The combined release is `studio-preview.4`, package version `0.1.0-studio-preview.4`. It adds independent console logging and sending controls to the parameters and analytics available in preview 2. Source manifests retain the upstream source version; only staged archive manifests receive the fork version and fixed internal archive URLs. All eleven public packages use one fork version, including Pixi. Archives are private for npm publication, but installable through their GitHub URLs.
 
 Run frozen installation and `pnpm check`, the three example exports, and `pnpm packages:check` first. Commit/push the reviewed source to this fork's main and require CI's three platform checks to pass. From that clean, built commit run:
 
@@ -41,7 +41,7 @@ Engine tests use mocked/intercepted delivery, never the live analytics project. 
 
 ## Console logging and sending
 
-`studio-preview.3` adds independent `logging` and `sending` controls; the older `studio-preview.2` packages do not accept them. Upgrade every Replayable module together before adding the settings to a pinned consumer. This change does not add Studio controls or a live runtime switch.
+`studio-preview.4` adds independent `logging` and `sending` controls; the older `studio-preview.2` packages do not accept them. Upgrade every Replayable module together before adding the settings to a pinned consumer. This change does not add Studio controls or a live runtime switch.
 
 Both controls accept a boolean for every network or a map of network-specific booleans. Logging defaults to `false`; sending defaults to `true`. Unspecified map entries use those same defaults. Sending still requires an explicit configured route. `analytics: false` disables both outputs.
 
@@ -65,3 +65,7 @@ Console output is one line per accepted event, containing only its name and opti
 The same logger covers automatic engine events and custom events. It logs after readiness, declaration/value validation and existing event limits. Invalid, premature and capped custom events are ignored as before. A console line is not a delivery receipt. It contains no destination token, session metadata or payload dump. Console failures cannot interrupt gameplay or stop enabled delivery.
 
 Log-only variants omit destination credentials and select the disabled transport module. Fully disabled variants keep the existing no-op implementation. Configuration changes take effect after restarting the dev preview or rebuilding the output; existing exported files do not change. No event names, counters or gameplay triggers are added or modified.
+
+## Combined network release
+
+`studio-preview.4` combines the analytics logging/sending controls with network support. Helix (`adn`) and TikTok retain their own runtime/analytics identities while reusing the AppLovin and Mintegral integrations. Snapchat requires portrait output and forbids an outbound analytics destination; disabled analytics and logging-only configurations are supported. No new analytics route is enabled automatically. See [export documentation](../reference/export.md) for packaging and manual host checks. Keep `studio-preview.3` available for rollback; consumers must revert new network configuration and package pins together.

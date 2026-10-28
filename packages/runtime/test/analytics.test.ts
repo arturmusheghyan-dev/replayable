@@ -254,3 +254,15 @@ function createRuntimeState(): RuntimeState {
     viewport: { height: 800, width: 400 },
   };
 }
+
+it.each(['adn', 'tiktok'] as const)('retains %s identity in analytics events', (network) => {
+  transport.send.mockClear();
+  const options = testOptions();
+  const analytics = createAnalytics({ ...options, runtime: { ...options.runtime, network } });
+  analytics.start();
+  analytics.recordCta();
+  expect(transport.send.mock.calls.length).toBeGreaterThan(0);
+  for (const [event] of transport.send.mock.calls) {
+    expect(event.network).toBe(network);
+  }
+});

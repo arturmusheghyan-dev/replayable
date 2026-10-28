@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { prepareManifest, version } from './fork-release.ts';
+import { prepareManifest, tag, version } from './fork-release.ts';
 
 const packages = {
   '@replayablejs/runtime': {
@@ -52,4 +52,9 @@ test('fork packaging refuses missing internal modules and unresolved local depen
       ),
     /Unresolved development dependency/,
   );
+});
+
+test('combined release keeps a single fork package version', () => {
+  assert.equal(tag, 'studio-preview.4');
+  assert.equal(version, '0.1.0-studio-preview.4');
 });

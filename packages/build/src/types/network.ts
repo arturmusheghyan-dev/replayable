@@ -32,6 +32,7 @@ export type RuntimeHost =
   | 'meta'
   | 'mintegral'
   | 'moloco'
+  | 'snapchat'
   | 'unity';
 
 /** Identifies whether Replayable or the advertising host presents initial loading UI. */
@@ -58,6 +59,8 @@ export interface PlayableProfile {
   readonly htmlHead: NetworkHtmlHead;
   /** Determines which layer owns the visible loading presentation. */
   readonly loadingIndicator: LoadingIndicatorOwner;
+  /** Authored screen configuration after applying the delivery orientation policy. */
+  readonly screen: PlayableVariant['screen'];
   /** Private runtime adapter compiled into the playable. */
   readonly runtime: RuntimeHost;
 }
