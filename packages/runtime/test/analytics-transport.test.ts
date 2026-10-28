@@ -29,6 +29,7 @@ const event: NormalizedAnalyticsEvent = {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe('analytics transport', () => {
@@ -87,7 +88,8 @@ describe('analytics transport', () => {
     });
     expect(() => transport.send(event, { terminal: false })).not.toThrow();
   });
-  it('disabled analytics never touches the transport or runtime state', () => {
+  it('disabled analytics never touches the transport, console or runtime state', () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     const fetch = vi.fn<typeof globalThis.fetch>();
     const getState = vi.fn<() => never>(() => {
       throw new Error('Disabled analytics must not read state');
@@ -106,5 +108,6 @@ describe('analytics transport', () => {
     analytics.recordCta();
     expect(fetch).not.toHaveBeenCalled();
     expect(getState).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalled();
   });
 });

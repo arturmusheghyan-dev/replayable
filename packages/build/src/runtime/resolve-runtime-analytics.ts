@@ -19,6 +19,9 @@ export function resolveRuntimeAnalytics(analytics: PlayableVariant['analytics'])
 
   return {
     analytics: resolve(runtimeDirectory, 'analytics/enabled.js'),
-    transport: resolve(runtimeDirectory, `analytics/transports/${analytics.destination.type}.js`),
+    transport: resolve(
+      runtimeDirectory,
+      `analytics/transports/${analytics.destination === false ? 'disabled' : analytics.destination.type}.js`,
+    ),
   };
 }

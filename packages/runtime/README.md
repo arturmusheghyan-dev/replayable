@@ -31,3 +31,5 @@ their accompanying license terms.
 ## Studio fork analytics
 
 Optional analytics is disabled by default and routed explicitly per network. The current main branch preserves Studio structured parameters alongside the public `playable.analytics.track` API. See [configuration, events and fork package releases](../../docs/guide/studio-fork.md).
+
+The current source supports simple console analytics logs and independent sending controls, globally or per network. Logs contain only the event name and optional integer value. Log-only variants do not initialize a network transport. These settings require fork release `studio-preview.3` or later.

@@ -84,7 +84,7 @@ function createPlayableVariant(
   };
 }
 
-/** Selects one configured destination for the active network, or compiles analytics out. */
+/** Resolves logging and delivery independently; removes credentials when sending is disabled. */
 function resolveAnalytics(
   config: ReplayableConfig,
   network: PlayableVariant['network'],
@@ -93,14 +93,19 @@ function resolveAnalytics(
     return false;
   }
 
-  const destinationName = config.analytics.routes[network];
-  if (destinationName === undefined || destinationName === false) {
+  const { logging, sending, routes, destinations } = config.analytics;
+  const logEvents = typeof logging === 'boolean' ? logging : (logging[network] ?? false);
+  const sendEvents = typeof sending === 'boolean' ? sending : (sending[network] ?? true);
+  const destinationName = routes[network];
+  const destination = sendEvents && destinationName ? destinations[destinationName]! : false;
+  if (!logEvents && destination === false) {
     return false;
   }
 
   return {
     buildId: config.analytics.buildId,
-    destination: config.analytics.destinations[destinationName]!,
+    destination,
+    logging: logEvents,
     events: config.analytics.events,
   };
 }

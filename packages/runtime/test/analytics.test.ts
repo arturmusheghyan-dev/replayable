@@ -1,6 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { CreateAnalyticsOptions, NormalizedAnalyticsEvent } from '../src/types/analytics.js';
+import type {
+  CreateAnalyticsOptions,
+  NormalizedAnalyticsEvent,
+  RuntimeAnalyticsConfig,
+} from '../src/types/analytics.js';
 import type { RuntimeState } from '../src/types/runtime.js';
 import type { PostRenderContext } from '../src/types/update.js';
 
@@ -9,14 +13,21 @@ const transport = vi.hoisted(() => ({
 }));
 
 vi.mock('#analytics-transport', () => ({
-  createAnalyticsTransport: () => transport,
+  createAnalyticsTransport: vi.fn<typeof createAnalyticsTransport>(() => transport),
 }));
+
+import { createAnalyticsTransport } from '#analytics-transport';
 
 import { createAnalytics } from '../src/analytics/enabled.js';
 
 describe('analytics', () => {
   beforeEach(() => {
     transport.send.mockReset();
+    vi.mocked(createAnalyticsTransport).mockClear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('records lifecycle and declared custom events with one session and ordered sequences', () => {
@@ -121,6 +132,76 @@ describe('analytics', () => {
     expect(() => analytics.recordCompletion('failure')).not.toThrow();
   });
 
+  it('keeps existing configurations silent while still sending', () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const analytics = createAnalytics(testOptions());
+    analytics.start();
+    analytics.track('counted', 0);
+    expect(log).not.toHaveBeenCalled();
+    expect(transport.send).toHaveBeenCalledTimes(2);
+  });
+
+  it('logs automatic and custom events as simple lines without creating a transport', () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    let firstFrame: ((context: PostRenderContext) => void) | undefined;
+    const analytics = createAnalytics({
+      ...testOptions({ destination: false, logging: true }),
+      postRender: {
+        add(callback) {
+          firstFrame = callback;
+          return () => {};
+        },
+      },
+    });
+    analytics.recordFirstInteraction();
+    analytics.start();
+    firstFrame?.({ timestamp: performance.now() });
+    analytics.track('counted', 0);
+    analytics.recordCompletion('failure');
+    analytics.recordCta();
+    expect(log.mock.calls).toEqual([
+      ['[Analytics] replayable_started'],
+      ['[Analytics] replayable_first_interaction'],
+      ['[Analytics] replayable_first_frame'],
+      ['[Analytics] counted: 0'],
+      ['[Analytics] replayable_completed: 1'],
+      ['[Analytics] replayable_cta'],
+    ]);
+    expect(createAnalyticsTransport).not.toHaveBeenCalled();
+    expect(transport.send).not.toHaveBeenCalled();
+  });
+
+  it('logs and sends independently, including when a console replacement throws', () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const analytics = createAnalytics(testOptions({ logging: true }));
+    analytics.start();
+    expect(log).toHaveBeenCalledWith('[Analytics] replayable_started');
+    expect(transport.send).toHaveBeenCalledTimes(1);
+    log.mockImplementation(() => {
+      throw new Error('console unavailable');
+    });
+    expect(() => analytics.track('counted', 0)).not.toThrow();
+    expect(transport.send).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps validation, readiness and event limits active for log-only sessions', () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const analytics = createAnalytics(testOptions({ destination: false, logging: true }));
+    analytics.track('counted', 0);
+    expect(log).not.toHaveBeenCalled();
+    analytics.start();
+    analytics.track('missing', 0);
+    analytics.track('counted');
+    analytics.track('counted', 0.5);
+    analytics.track('counted', -1);
+    for (let i = 0; i < 40; i += 1) {
+      analytics.track('counted', 0);
+    }
+    expect(log.mock.calls.filter(([line]) => line === '[Analytics] counted: 0')).toHaveLength(32);
+    expect(log).toHaveBeenCalledTimes(33);
+    expect(transport.send).not.toHaveBeenCalled();
+  });
+
   it('caps the complete session even across multiple declared events', () => {
     const options = testOptions();
     if (options.config === false) {
@@ -143,7 +224,9 @@ describe('analytics', () => {
   });
 });
 
-function testOptions(): CreateAnalyticsOptions {
+function testOptions(
+  overrides: Partial<Exclude<RuntimeAnalyticsConfig, false>> = {},
+): CreateAnalyticsOptions {
   return {
     config: {
       buildId: 'TEST_BUILD',
@@ -153,6 +236,7 @@ function testOptions(): CreateAnalyticsOptions {
         projectToken: 'phc_test',
       },
       events: { counted: { integer: { min: 0, max: 10 } } },
+      ...overrides,
     },
     getState: createRuntimeState,
     postRender: { add: () => () => {} },

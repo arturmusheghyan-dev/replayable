@@ -24,7 +24,9 @@ export type RuntimeAnalyticsConfig =
   | false
   | {
       readonly buildId: string;
-      readonly destination: RuntimeAnalyticsDestination;
+      readonly destination: RuntimeAnalyticsDestination | false;
+      /** Console event names and optional values only; omitted means no logging. */
+      readonly logging?: boolean;
       readonly events: Readonly<Record<string, RuntimeAnalyticsEventDefinition>>;
     };
 

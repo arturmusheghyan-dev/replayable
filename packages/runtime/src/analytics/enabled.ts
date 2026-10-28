@@ -23,7 +23,8 @@ export function createAnalytics(options: CreateAnalyticsOptions): AnalyticsContr
   }
 
   const config = options.config;
-  const transport = createAnalyticsTransport(config.destination);
+  const transport =
+    config.destination === false ? undefined : createAnalyticsTransport(config.destination);
   const counts = new Map<string, number>();
   const sessionId = createSessionId();
   let eventCount = 0;
@@ -67,8 +68,18 @@ export function createAnalytics(options: CreateAnalyticsOptions): AnalyticsContr
     eventCount += 1;
     counts.set(eventName, nameCount + 1);
 
+    if (config.logging) {
+      try {
+        console.log(
+          `[Analytics] ${eventName}${integerValue === undefined ? '' : `: ${integerValue}`}`,
+        );
+      } catch {
+        // A replaced console must not interrupt gameplay or analytics delivery.
+      }
+    }
+
     try {
-      transport.send(event, { terminal });
+      transport?.send(event, { terminal });
     } catch {
       // Analytics must never interrupt gameplay.
     }

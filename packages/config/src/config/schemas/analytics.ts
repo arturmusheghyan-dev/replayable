@@ -31,13 +31,18 @@ const postHogDestinationSchema = z.strictObject({
   projectToken: z.string().regex(/^phc_[A-Za-z0-9]+$/, 'Invalid PostHog project token'),
 });
 
+/** A boolean sets all networks; a map overrides only the named networks. */
+const networkSwitchSchema = z.union([z.boolean(), z.partialRecord(networkSchema, z.boolean())]);
+
 export const analyticsSchema = z
   .union([
     z.literal(false),
     z
       .strictObject({
         buildId: requiredStringSchema,
-        destinations: z.record(dimensionNameSchema, postHogDestinationSchema),
+        destinations: z.record(dimensionNameSchema, postHogDestinationSchema).default({}),
+        logging: networkSwitchSchema.default(false),
+        sending: networkSwitchSchema.default(true),
         routes: z
           .partialRecord(networkSchema, z.union([dimensionNameSchema, z.literal(false)]))
           .default({}),

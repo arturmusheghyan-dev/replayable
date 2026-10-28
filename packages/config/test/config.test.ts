@@ -84,6 +84,127 @@ describe('Replayable config', () => {
     expect(variants.preview?.params).toEqual({ tuning: { enabled: false, text: '', amount: 0 } });
   });
 
+  it('keeps sending enabled and logging disabled by default', () => {
+    const config = defineConfig({
+      assets,
+      screen,
+      store,
+      name: 'analytics-defaults',
+      localization: { fallback: 'en', languages: ['en'] },
+      analytics: { buildId: 'TEST', destinations: {} },
+    });
+    expect(config.analytics).toMatchObject({ logging: false, sending: true });
+  });
+
+  it.each([false, true])('resolves logging independently of sending: logging=%s', (logging) => {
+    for (const sending of [false, true]) {
+      const config = defineConfig({
+        assets,
+        screen,
+        store,
+        name: 'analytics-switches',
+        localization: { fallback: 'en', languages: ['en'] },
+        networks: { preview: {} },
+        analytics: {
+          buildId: 'TEST',
+          logging,
+          sending,
+          destinations: {
+            pilot: {
+              type: 'posthog',
+              endpoint: 'https://example.invalid/events',
+              projectToken: 'phc_test',
+            },
+          },
+          routes: { preview: 'pilot' },
+        },
+      });
+      const analytics = createVariants(config)[0]!.analytics;
+      const expected =
+        !logging && !sending
+          ? false
+          : {
+              buildId: 'TEST',
+              logging,
+              events: {},
+              destination: sending
+                ? {
+                    type: 'posthog',
+                    endpoint: 'https://example.invalid/events',
+                    projectToken: 'phc_test',
+                  }
+                : false,
+            };
+      expect(analytics).toEqual(expected);
+      expect(JSON.stringify(analytics).includes('phc_test')).toBe(sending);
+    }
+  });
+
+  it('supports log-only preview while preserving other routed delivery networks', () => {
+    const config = defineConfig({
+      assets,
+      screen,
+      store,
+      name: 'analytics-per-network',
+      localization: { fallback: 'en', languages: ['en'] },
+      networks: { preview: {}, unity: {}, meta: {} },
+      analytics: {
+        buildId: 'TEST',
+        logging: { preview: true },
+        sending: { preview: false },
+        destinations: {
+          pilot: {
+            type: 'posthog',
+            endpoint: 'https://example.invalid/events',
+            projectToken: 'phc_test',
+          },
+        },
+        routes: { preview: 'pilot', unity: 'pilot', meta: false },
+      },
+    });
+    const variants = Object.fromEntries(
+      createVariants(config).map((v) => [v.network, v.analytics]),
+    );
+    expect(variants.preview).toMatchObject({ logging: true, destination: false });
+    expect(variants.unity).toMatchObject({
+      logging: false,
+      destination: { projectToken: 'phc_test' },
+    });
+    expect(variants.meta).toBe(false);
+  });
+
+  it('allows logging without a destination and keeps the master off switch', () => {
+    const project = {
+      assets,
+      screen,
+      store,
+      name: 'analytics-local',
+      localization: { fallback: 'en', languages: ['en'] },
+    };
+    const config = defineConfig({
+      ...project,
+      analytics: { buildId: 'TEST', logging: true, sending: false },
+    });
+    expect(createVariants(config)[0]!.analytics).toMatchObject({
+      logging: true,
+      destination: false,
+    });
+    expect(createVariants(defineConfig({ ...project, analytics: false }))[0]!.analytics).toBe(
+      false,
+    );
+    for (const options of [
+      { logging: 'true' },
+      { sending: 'false' },
+      { logging: { typo: true } },
+      { sending: { preview: 0 } },
+    ]) {
+      expect(
+        replayableConfigSchema.safeParse({ ...project, analytics: { buildId: 'TEST', ...options } })
+          .success,
+      ).toBe(false);
+    }
+  });
+
   it('rejects unknown analytics destinations and reserved event names', () => {
     const project = {
       assets,
