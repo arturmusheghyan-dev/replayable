@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { analyticsSchema } from './schemas/analytics.js';
 import { replayableAssetsSchema } from './schemas/assets.js';
 import { audioSchema } from './schemas/audio.js';
 import { backgroundColorSchema } from './schemas/background.js';
@@ -27,6 +28,7 @@ export { replayableAssetsSchema } from './schemas/assets.js';
  */
 export const replayableConfigSchema = z
   .strictObject({
+    analytics: analyticsSchema,
     assets: replayableAssetsSchema,
     audio: audioSchema,
     backgroundColor: backgroundColorSchema,

@@ -3,11 +3,22 @@ import { defineConfig } from 'tsdown';
 export default defineConfig({
   clean: true,
   deps: {
-    neverBundle: ['#adapter', '#assets', '#audio', '#definition'],
+    neverBundle: [
+      '#adapter',
+      '#analytics',
+      '#analytics-transport',
+      '#assets',
+      '#audio',
+      '#definition',
+    ],
   },
   dts: true,
   entry: {
     assets: 'src/assets/index.ts',
+    'analytics/disabled': 'src/analytics/disabled.ts',
+    'analytics/enabled': 'src/analytics/enabled.ts',
+    'analytics/transports/disabled': 'src/analytics/transports/disabled.ts',
+    'analytics/transports/posthog': 'src/analytics/transports/posthog.ts',
     'audio/disabled': 'src/audio/disabled.ts',
     'audio/enabled': 'src/audio/enabled.ts',
     index: 'src/index.ts',

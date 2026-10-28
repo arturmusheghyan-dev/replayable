@@ -1,3 +1,4 @@
+import type { PlayableAnalytics, RuntimeAnalyticsConfig } from '#types/analytics.js';
 import type { AssetMode } from '#types/assets.js';
 import type { PlayableAudio, RuntimeAudioState } from '#types/audio.js';
 import type {
@@ -26,6 +27,8 @@ import type {
 
 /** Resolved, browser-safe configuration for the active playable variant. */
 export interface RuntimeConfig {
+  /** External analytics resolved for this network, or false when compiled out. */
+  readonly analytics: RuntimeAnalyticsConfig;
   /** Whether this concrete playable variant includes runtime audio capability. */
   readonly audio: boolean;
   /** First-paint color retained behind the playable's mounted content. */
@@ -128,6 +131,8 @@ export interface Playable {
   readonly localization: Localization;
   /** Plays sounds through Replayable's capability-aware audio facade. */
   readonly audio: PlayableAudio;
+  /** Sends declared playable-specific events through the configured destination. */
+  readonly analytics: PlayableAnalytics;
   /** Creates application-owned timers synchronized with visible runtime time. */
   readonly timers: PlayableTimers;
 

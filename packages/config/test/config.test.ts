@@ -41,6 +41,76 @@ const screen = {
 };
 
 describe('Replayable config', () => {
+  it('routes analytics per network and compiles unconfigured networks out', () => {
+    const config = defineConfig({
+      analytics: {
+        buildId: 'TEST_BUILD',
+        destinations: {
+          pilot: {
+            type: 'posthog',
+            endpoint: 'https://us.i.posthog.com/i/v0/e/',
+            projectToken: 'phc_test',
+          },
+        },
+        routes: { preview: 'pilot', unity: 'pilot' },
+        events: { target_tapped: { integer: { min: 1, max: 3 } } },
+      },
+      assets,
+      localization: { fallback: 'en', languages: ['en'] },
+      name: 'analytics',
+      params: {
+        tuning: {
+          type: 'object',
+          label: 'Tuning',
+          parameters: {
+            enabled: { type: 'boolean', label: 'Enabled', default: true },
+            text: { type: 'text', label: 'Text', default: 'default' },
+            amount: { type: 'number', label: 'Amount', default: 2 },
+          },
+        },
+      },
+      versions: { default: { params: { tuning: { enabled: false, text: '', amount: 0 } } } },
+      networks: { google: {}, preview: {}, unity: {} },
+      screen,
+      store,
+    });
+    const variants = Object.fromEntries(
+      createVariants(config).map((variant) => [variant.network, variant]),
+    );
+
+    expect(variants.preview?.analytics).toMatchObject({ buildId: 'TEST_BUILD' });
+    expect(variants.unity?.analytics).toMatchObject({ buildId: 'TEST_BUILD' });
+    expect(variants.google?.analytics).toBe(false);
+    expect(variants.preview?.params).toEqual({ tuning: { enabled: false, text: '', amount: 0 } });
+  });
+
+  it('rejects unknown analytics destinations and reserved event names', () => {
+    const project = {
+      assets,
+      localization: { fallback: 'en', languages: ['en'] },
+      name: 'analytics-invalid',
+      screen,
+      store,
+    };
+
+    expect(() =>
+      defineConfig({
+        ...project,
+        analytics: { buildId: 'TEST', destinations: {}, routes: { preview: 'missing' } },
+      }),
+    ).toThrow(/Unknown analytics destination/u);
+    expect(() =>
+      defineConfig({
+        ...project,
+        analytics: {
+          buildId: 'TEST',
+          destinations: {},
+          events: { replayable_started: {} },
+        },
+      }),
+    ).toThrow(/reserved/u);
+  });
+
   it('defaults the endcard trigger off and accepts only boolean preferences', () => {
     const input = {
       assets,

@@ -21,6 +21,7 @@
   "imports": {
     "#adapters/*": "./src/adapters/*",
     "#assets/*": "./src/assets/*",
+    "#analytics/*": "./src/analytics/*",
     "#audio/*": "./src/audio/*",
     "#completion/*": "./src/completion/*",
     "#fb-playable/*": "./src/fb-playable/*",

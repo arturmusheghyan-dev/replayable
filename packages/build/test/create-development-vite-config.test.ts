@@ -15,6 +15,8 @@ it.each(['object', 'array'] as const)(
     const packageNames = ['@replayablejs/runtime', '@replayablejs/devtools'] as const;
     const selected = {
       '#adapter': 'adapter',
+      '#analytics': 'analytics',
+      '#analytics-transport': 'analyticsTransport',
       '#assets': 'assets',
       '#definition': 'definition',
       '#audio': 'audio',
@@ -26,8 +28,8 @@ it.each(['object', 'array'] as const)(
     try {
       // Installed packages, not workspace symlinks: the npm-consumer failure mode.
       for (const [name, entries] of [
-        [packageNames[0], Object.entries(selected).slice(0, 4)],
-        [packageNames[1], Object.entries(selected).slice(4)],
+        [packageNames[0], Object.entries(selected).slice(0, 6)],
+        [packageNames[1], Object.entries(selected).slice(6)],
       ] as const) {
         const directory = join(projectRoot, 'node_modules', name);
         await mkdir(directory, { recursive: true });

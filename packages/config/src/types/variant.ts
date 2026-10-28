@@ -1,12 +1,25 @@
 import type { AssetConfig } from '@replayablejs/assets';
 
-import type { ReplayableConfig, ReplayableNetwork, ReplayableParamValue } from './config.js';
+import type {
+  AnalyticsDestination,
+  AnalyticsEventDefinition,
+  ReplayableConfig,
+  ReplayableNetwork,
+  ReplayableParamValue,
+} from './config.js';
 
 /** Values one version or network can replace in a concrete playable variant. */
 export type VariantOverride = ReplayableConfig['versions'][string];
 
 /** One concrete version, network, and language combination. */
 export interface PlayableVariant {
+  readonly analytics:
+    | false
+    | {
+        readonly buildId: string;
+        readonly destination: AnalyticsDestination;
+        readonly events: Readonly<Record<string, AnalyticsEventDefinition>>;
+      };
   readonly assets: AssetConfig;
   readonly audio: boolean;
   readonly backgroundColor: string;

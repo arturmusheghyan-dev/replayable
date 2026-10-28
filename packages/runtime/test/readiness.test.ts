@@ -168,6 +168,7 @@ function createRuntimeDefinition(): RuntimeDefinition {
   return {
     assetMode: 'resource',
     config: {
+      analytics: false,
       audio: false,
       backgroundColor: '#000000',
       devtools: { stats: false, endCardTrigger: false, soundControl: false },

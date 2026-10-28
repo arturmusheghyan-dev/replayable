@@ -9,6 +9,16 @@ export default defineConfig({
     // before individual suites can mock the binding.
     alias: [
       {
+        find: /^#analytics$/,
+        replacement: fileURLToPath(new URL('./src/analytics/disabled.ts', import.meta.url)),
+      },
+      {
+        find: /^#analytics-transport$/,
+        replacement: fileURLToPath(
+          new URL('./src/analytics/transports/disabled.ts', import.meta.url),
+        ),
+      },
+      {
         find: /^#audio$/,
         replacement: fileURLToPath(new URL('./src/audio/disabled.ts', import.meta.url)),
       },

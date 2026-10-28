@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "turbo run build --filter='!./examples/*'",
-    "check": "pnpm versions:check && pnpm format:check && pnpm dependencies:check && turbo run lint typecheck test build",
+    "check": "pnpm versions:check && pnpm fork:test && pnpm format:check && pnpm dependencies:check && turbo run lint typecheck test build",
     "dependencies:check": "tsc --noEmit --project scripts/tsconfig.json && node scripts/check-dependency-singletons.ts",
     "dev": "turbo run dev --parallel",
     "docs:dev": "pnpm --filter @replayablejs/docs dev",
@@ -20,7 +20,9 @@
     "prepare": "husky",
     "pages:build": "node scripts/build-pages.ts",
     "versions:sync": "node scripts/sync-release-version.ts",
-    "versions:check": "node scripts/sync-release-version.ts --check"
+    "versions:check": "node scripts/sync-release-version.ts --check",
+    "fork:pack": "node scripts/fork-release.ts",
+    "fork:test": "node --test scripts/fork-release.test.ts"
   },
   "devDependencies": {
     "@changesets/cli": "3.0.0",

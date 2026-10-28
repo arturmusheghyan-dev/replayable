@@ -55,6 +55,7 @@ function createPlayableVariant(
   };
 
   return {
+    analytics: resolveAnalytics(config, network),
     assets: resolveAssetConfig(
       config.assets,
       localization,
@@ -80,6 +81,27 @@ function createPlayableVariant(
     screen: config.screen,
     store: config.store,
     version,
+  };
+}
+
+/** Selects one configured destination for the active network, or compiles analytics out. */
+function resolveAnalytics(
+  config: ReplayableConfig,
+  network: PlayableVariant['network'],
+): PlayableVariant['analytics'] {
+  if (config.analytics === false) {
+    return false;
+  }
+
+  const destinationName = config.analytics.routes[network];
+  if (destinationName === undefined || destinationName === false) {
+    return false;
+  }
+
+  return {
+    buildId: config.analytics.buildId,
+    destination: config.analytics.destinations[destinationName]!,
+    events: config.analytics.events,
   };
 }
 

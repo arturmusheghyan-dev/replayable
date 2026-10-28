@@ -27,3 +27,7 @@ with `pnpm build`. Run `pnpm --filter @replayablejs/runtime test` for this packa
 
 Original code is [MIT licensed](https://github.com/replayablejs/replayable/blob/main/LICENSE). Bundled third-party resources retain
 their accompanying license terms.
+
+## Studio fork analytics
+
+Optional analytics is disabled by default and routed explicitly per network. The current main branch preserves Studio structured parameters alongside the public `playable.analytics.track` API. See [configuration, events and fork package releases](../../docs/guide/studio-fork.md).

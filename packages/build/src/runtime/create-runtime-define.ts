@@ -13,6 +13,7 @@ export function createRuntimeDefine(
   const definition: Pick<RuntimeDefinition, 'assetMode' | 'config'> = {
     assetMode: profile.assetMode,
     config: {
+      analytics: variant.analytics,
       audio: variant.audio,
       backgroundColor: variant.backgroundColor,
       completion: createRuntimeCompletionConfig(variant, profile),

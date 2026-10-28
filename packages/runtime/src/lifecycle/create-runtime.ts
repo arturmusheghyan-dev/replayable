@@ -1,3 +1,4 @@
+import { createAnalytics } from '#analytics';
 import { createAudio } from '#audio';
 import { createRuntimeState } from '#lifecycle/create-runtime-state.js';
 import { observeUserActivity } from '#lifecycle/interaction.js';
@@ -33,6 +34,16 @@ export function createRuntime({ adapter, assets, definition }: CreateRuntimeOpti
   const localization = createLocalization(config.localization, loader);
   const audio = createAudio(loader);
   const runtimeUpdates = createRuntimeUpdates();
+  const analytics = createAnalytics({
+    config: config.analytics,
+    getState: () => runtimeState.get(),
+    postRender: runtimeUpdates.postRender,
+    runtime: {
+      language: config.localization.language,
+      network: config.network,
+      version: config.version,
+    },
+  });
   const timerController = createTimers(runtimeUpdates.activeTime);
   const completionTimers = timerController.createCompletion(config.completion, runtimeState);
   let readiness: Promise<void> | undefined;
@@ -58,6 +69,7 @@ export function createRuntime({ adapter, assets, definition }: CreateRuntimeOpti
     loader,
     localization,
     audio,
+    analytics,
     timers: timerController.timers,
 
     update: runtimeUpdates.update,
@@ -104,6 +116,7 @@ export function createRuntime({ adapter, assets, definition }: CreateRuntimeOpti
 
   /** Opens the platform-specific store destination through the active host. */
   function openStore(): void {
+    analytics.recordCta();
     adapter.openStore(storeUrl);
   }
 
@@ -123,6 +136,9 @@ export function createRuntime({ adapter, assets, definition }: CreateRuntimeOpti
 
     shell.loadingIndicator?.remove();
     runtimeReady = true;
+    if (runtimeState.get().visible) {
+      analytics.start();
+    }
     adapter.notifyReady?.();
     completionTimers.start(runtimeState.get().interacted);
     runtimeUpdates.markReady();
@@ -134,13 +150,15 @@ export function createRuntime({ adapter, assets, definition }: CreateRuntimeOpti
   }
 
   /** Stops automatic timer work after either manual or automatic completion. */
-  function handleCompletion(): void {
+  function handleCompletion(completion: RuntimeEventMap['complete']): void {
+    analytics.recordCompletion(completion.reason);
     completionTimers.stop();
     adapter.notifyComplete?.();
   }
 
   /** Applies one-time policies while the first interaction owns user activation. */
   function handleFirstInteraction(): void {
+    analytics.recordFirstInteraction();
     audio.unlock();
     completionTimers.recordFirstInteraction();
   }
@@ -160,6 +178,9 @@ export function createRuntime({ adapter, assets, definition }: CreateRuntimeOpti
 
   /** Keeps frame scheduling aligned with the host's normalized viewability. */
   function handleVisibilityChange(visible: boolean): void {
+    if (runtimeReady && visible) {
+      analytics.start();
+    }
     audio.setVisible(visible);
     runtimeUpdates.setVisible(visible);
   }

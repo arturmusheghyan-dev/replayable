@@ -3,6 +3,8 @@ import type { z } from 'zod';
 import type { replayableAssetsSchema, replayableConfigSchema } from '#config/schema.js';
 import type { networkSchema } from '#config/schemas/variants.js';
 
+export type { AnalyticsDestination, AnalyticsEventDefinition } from '#config/schemas/analytics.js';
+
 export type { ReplayableParamDefinition, ReplayableParamValue } from './params.js';
 
 /** Validated Replayable project configuration with every schema default applied. */

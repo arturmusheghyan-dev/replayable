@@ -55,6 +55,8 @@ export { defineConfig } from '#config/define-config.js';
 export { replayableAssetsSchema, replayableConfigSchema } from '#config/schema.js';
 export { createVariants } from '#variants/create-variants.js';
 export type {
+  AnalyticsDestination,
+  AnalyticsEventDefinition,
   ReplayableAssetsConfig,
   ReplayableAssetsConfigInput,
   ReplayableBuild,

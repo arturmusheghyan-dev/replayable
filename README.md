@@ -12,6 +12,10 @@ Replayable is a TypeScript toolkit for building playable ads. It combines asset 
 network-specific builds and exports with a browser runtime and optional Pixi/Spine integration.
 The product is Replayable; GitHub and npm use the `replayablejs` organization.
 
+## Studio fork
+
+This fork is maintained on `main`, combining Studio-compatible structured parameters with optional analytics. PlayableStudio templates consume pinned GitHub release archives, not the upstream npm instructions below. See [Studio fork releases and analytics](docs/guide/studio-fork.md) for `studio-preview.2`, event behavior, verification, and rollback.
+
 ## Alpha release
 
 <!-- replayable-version:start -->
@@ -144,7 +148,7 @@ Export reads those builds and writes HTML/ZIP delivery files to `exports/`.
 - [`@replayablejs/export`](packages/export/README.md) — Turn existing playable builds into network-specific delivery artifacts.
 - [`@replayablejs/cli`](packages/cli/README.md) — Run assets, configuration, development, build and export commands.
 
-Root, documentation and example workspaces are private. All ten public packages share one toolkit version.
+Root, documentation and example workspaces are private. All eleven public packages share one toolkit version.
 The `replayable` CLI name does not change with the npm scope.
 
 ## Documentation and development

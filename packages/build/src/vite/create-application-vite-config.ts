@@ -7,6 +7,7 @@ import {
   resolveEndCardTrigger,
   resolveSoundControl,
 } from '#runtime/resolve-devtools.js';
+import { resolveRuntimeAnalytics } from '#runtime/resolve-runtime-analytics.js';
 import { resolveRuntimeAudio } from '#runtime/resolve-runtime-audio.js';
 import type { PlayableViteContext } from '#types/vite.js';
 
@@ -18,6 +19,8 @@ export function createApplicationViteConfig(
   assetsEntry: string,
   command: 'build' | 'serve',
 ): InlineConfig {
+  const analytics = resolveRuntimeAnalytics(options.variant.analytics);
+
   return {
     define: options.profile.compileTimeDefinitions,
     plugins: [
@@ -29,6 +32,8 @@ export function createApplicationViteConfig(
     resolve: {
       alias: {
         '#adapter': resolveBuildRuntimeModule('bindings/adapter.mjs'),
+        '#analytics': analytics.analytics,
+        '#analytics-transport': analytics.transport,
         '#assets': resolveBuildRuntimeModule('bindings/assets.mjs'),
         '#audio': resolveRuntimeAudio(options.variant.audio),
         '#definition': resolveBuildRuntimeModule('bindings/definition.mjs'),
