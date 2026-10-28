@@ -2,7 +2,12 @@ import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, basename } from 'node:path';
 
-import { type ExportFilename, createVariants, defineConfig } from '@replayablejs/config';
+import {
+  type ExportFilename,
+  type ReplayableConfigInput,
+  createVariants,
+  defineConfig,
+} from '@replayablejs/config';
 import { expect, it, onTestFinished } from 'vitest';
 
 import { resolveExportProject } from '../src/resolution/resolve-export-project.js';
@@ -38,7 +43,10 @@ const screen = {
   },
 };
 
-async function resolveNames(filename?: string | ExportFilename) {
+async function resolveNames(
+  filename?: string | ExportFilename,
+  networks: ReplayableConfigInput['networks'] = { meta: {}, google: {}, preview: {} },
+) {
   const projectRoot = await mkdtemp(join(tmpdir(), 'replayable-export-names-'));
   onTestFinished(() => rm(projectRoot, { recursive: true, force: true }));
   const config = defineConfig({
@@ -47,7 +55,7 @@ async function resolveNames(filename?: string | ExportFilename) {
     store,
     name: 'City Builder',
     localization: { fallback: 'en', languages: ['en'] },
-    networks: { meta: {}, google: {}, preview: {} },
+    networks,
     ...(filename === undefined ? {} : { export: { filename } }),
   });
   for (const variant of createVariants(config)) {
@@ -117,4 +125,68 @@ it('rejects non-string and asynchronous callback results', async () => {
 
 it('checks collisions for callback filenames', async () => {
   await expect(resolveNames(() => 'Same Name')).rejects.toThrow('resolve to the same output file');
+});
+
+it('rejects case-only callback collisions before writing any artifacts', async () => {
+  await expect(
+    resolveNames(({ network }) => (network === 'meta' ? 'Same Name' : 'same name')),
+  ).rejects.toThrow('resolve to the same output file');
+});
+
+it('rejects Unicode-normalization collisions on portable filesystems', async () => {
+  await expect(
+    resolveNames(({ network }) => (network === 'meta' ? 'caf\u00e9' : 'cafe\u0301')),
+  ).rejects.toThrow('resolve to the same output file');
+});
+
+it('allows a project to label Meta as facebook without changing its HTML format', async () => {
+  expect(
+    await resolveNames(
+      ({ network, version, language }) =>
+        `${network === 'meta' ? 'facebook' : network}_${version}_${language}`,
+    ),
+  ).toEqual(['facebook_default_en.html', 'google_default_en.zip', 'preview_default_en.html']);
+});
+
+it('uses configured network labels by default without changing delivery extensions', async () => {
+  expect(
+    await resolveNames(undefined, {
+      meta: { exportName: 'facebook' },
+      adn: {},
+      snapchat: {},
+      tiktok: {},
+    }),
+  ).toEqual([
+    'adn_default_en.html',
+    'facebook_default_en.html',
+    'snapchat_default_en.zip',
+    'tiktok_default_en.zip',
+  ]);
+});
+
+it('provides both the canonical network and resolved label to callbacks and templates', async () => {
+  const networks = { meta: { exportName: 'Facebook Custom' }, adn: {} };
+  expect(
+    await resolveNames(
+      ({ network, exportName, version, language }) =>
+        `${network}-${exportName}-${version}-${language}`,
+      networks,
+    ),
+  ).toEqual(['adn-adn-default-en.html', 'meta-Facebook Custom-default-en.html']);
+  expect(await resolveNames('{network}_{exportName}_{version}_{language}', networks)).toEqual([
+    'adn_adn_default_en.html',
+    'meta_facebook_custom_default_en.html',
+  ]);
+  expect(await resolveNames('{network}_{version}_{language}', networks)).toEqual([
+    'adn_default_en.html',
+    'meta_default_en.html',
+  ]);
+});
+
+it('rejects collisions introduced by configured network labels', async () => {
+  const networks = { meta: { exportName: 'Same' }, preview: { exportName: 'same' } };
+  await expect(resolveNames(undefined, networks)).rejects.toThrow('same output file');
+  await expect(resolveNames(({ exportName }) => exportName, networks)).rejects.toThrow(
+    'same output file',
+  );
 });

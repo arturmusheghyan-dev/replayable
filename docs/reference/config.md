@@ -48,7 +48,16 @@ Public types include `ReplayableConfigInput` for author input, `ReplayableConfig
 build for every selected network and creative version.
 
 `networks` defaults to `{ preview: {} }`. Supported keys are `preview`, `applovin`, `google`,
-`liftoff`, `meta`, `mintegral`, `moloco` and `unity`.
+`adn` (Helix), `liftoff`, `meta`, `mintegral`, `tiktok`, `snapchat`, `moloco` and `unity`.
+Helix and TikTok share AppLovin and Mintegral integrations respectively, while retaining their
+own variant identity, overrides and analytics routes. They do not require selecting the source
+network. Snapchat requires portrait support and a disabled analytics route.
+
+Set `networks.meta.exportName: 'facebook'` to customize the filename label without changing
+the network ID. This optional network-only field defaults to the network ID and accepts a
+non-empty filename segment without a path or `.html`/`.zip` extension. It does not alter
+runtime identity, analytics routing, build directories, or delivery format. It is not a
+version override.
 
 `versions` defaults to `{ default: {} }`. Two versions, three networks and two languages produce
 12 variants. Each has an ID such as `default/preview/en`.
@@ -260,8 +269,10 @@ export: {
 },
 ```
 
-The default is `{network}_{version}_{language}`. Supported placeholders are `{name}`
-(project name), `{version}` (playable version name), `{network}`, and `{language}`.
+The default is `{exportName}_{version}_{language}`. With no configured labels, filenames
+remain unchanged. Supported placeholders are `{name}` (project name), `{version}`
+(playable version name), `{network}` (stable network ID), `{exportName}` (configured
+network filename label, falling back to its ID), and `{language}`.
 Literal campaign text is allowed. Names become lowercase; punctuation and spaces
 become underscores. For example, `City Builder` with the template above produces
 `city_builder_default_google_en.zip`.
@@ -271,7 +282,8 @@ network and rejects unknown placeholders or duplicate output filenames before wr
 The CLI's `--output` option still controls the export directory.
 
 For full control, provide a synchronous callback. It receives the original project
-name, playable version name, network, and language. Its return value preserves
+name, playable version name, network, language, and the resolved `exportName`. The
+`network` input remains the stable ID. Its return value preserves
 casing, spaces, and hyphens:
 
 ```ts

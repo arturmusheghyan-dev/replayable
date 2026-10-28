@@ -17,6 +17,30 @@ const emptyHtmlHead: NetworkHtmlHead = {
   scripts: [],
 };
 
+const applovinProfile: NetworkProfile = {
+  assetMode: 'inline',
+  applicationMode: 'single-module',
+  compileTimeDefinitions: noCompileTimeDefinitions,
+  completionDurationStart: 'interaction',
+  controls: hiddenControls,
+  endCard: fullScreenEndCard,
+  loadingIndicator: 'replayable',
+  resolveHtmlHead: resolveEmptyHtmlHead,
+  runtime: 'applovin',
+};
+
+const mintegralProfile: NetworkProfile = {
+  assetMode: 'inline',
+  applicationMode: 'single-module',
+  compileTimeDefinitions: noCompileTimeDefinitions,
+  completionDurationStart: 'ready',
+  controls: hiddenControls,
+  endCard: fullScreenEndCard,
+  loadingIndicator: 'host',
+  resolveHtmlHead: resolveEmptyHtmlHead,
+  runtime: 'mintegral',
+};
+
 const networkProfiles = {
   preview: {
     assetMode: 'inline',
@@ -29,17 +53,8 @@ const networkProfiles = {
     resolveHtmlHead: resolveEmptyHtmlHead,
     runtime: 'browser',
   },
-  applovin: {
-    assetMode: 'inline',
-    applicationMode: 'single-module',
-    compileTimeDefinitions: noCompileTimeDefinitions,
-    completionDurationStart: 'interaction',
-    controls: hiddenControls,
-    endCard: fullScreenEndCard,
-    loadingIndicator: 'replayable',
-    resolveHtmlHead: resolveEmptyHtmlHead,
-    runtime: 'applovin',
-  },
+  applovin: applovinProfile,
+  adn: applovinProfile,
   meta: {
     assetMode: 'inline',
     applicationMode: 'single-module',
@@ -74,16 +89,18 @@ const networkProfiles = {
     resolveHtmlHead: resolveEmptyHtmlHead,
     runtime: 'liftoff',
   },
-  mintegral: {
+  mintegral: mintegralProfile,
+  tiktok: mintegralProfile,
+  snapchat: {
     assetMode: 'inline',
     applicationMode: 'single-module',
     compileTimeDefinitions: noCompileTimeDefinitions,
     completionDurationStart: 'ready',
     controls: hiddenControls,
-    endCard: fullScreenEndCard,
-    loadingIndicator: 'host',
+    endCard: ctaOnlyEndCard,
+    loadingIndicator: 'replayable',
     resolveHtmlHead: resolveEmptyHtmlHead,
-    runtime: 'mintegral',
+    runtime: 'snapchat',
   },
   moloco: {
     assetMode: 'inline',
@@ -116,6 +133,14 @@ const networkProfiles = {
 /** Resolves the asset, document, and runtime policy owned by one variant's network. */
 export function resolvePlayableProfile(variant: PlayableVariant): PlayableProfile {
   const profile = networkProfiles[variant.network];
+  if (variant.network === 'snapchat') {
+    if (!variant.screen.orientations.portrait.enabled) {
+      throw new Error('Snapchat requires an enabled portrait layout.');
+    }
+    if (variant.analytics !== false) {
+      throw new Error('Snapchat does not support outbound analytics. Disable its analytics route.');
+    }
+  }
 
   return {
     assetMode: profile.assetMode,
@@ -129,6 +154,16 @@ export function resolvePlayableProfile(variant: PlayableVariant): PlayableProfil
     htmlHead: profile.resolveHtmlHead(variant),
     loadingIndicator: profile.loadingIndicator,
     runtime: profile.runtime,
+    screen:
+      variant.network === 'snapchat'
+        ? {
+            ...variant.screen,
+            orientations: {
+              ...variant.screen.orientations,
+              landscape: { ...variant.screen.orientations.landscape, enabled: false },
+            },
+          }
+        : variant.screen,
   };
 }
 

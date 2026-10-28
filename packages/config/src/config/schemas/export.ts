@@ -10,8 +10,9 @@ const filenameSchema = requiredStringSchema
     'Export filename must not contain directory separators.',
   )
   .refine(
-    (value) => !/[{}]/u.test(value.replace(/\{(?:name|network|version|language)\}/gu, '')),
-    'Export filename supports only {name}, {network}, {version}, and {language}.',
+    (value) =>
+      !/[{}]/u.test(value.replace(/\{(?:name|network|exportName|version|language)\}/gu, '')),
+    'Export filename supports only {name}, {network}, {exportName}, {version}, and {language}.',
   )
   .refine(
     (value) => !/\.(?:html|zip)$/iu.test(value),
@@ -23,6 +24,6 @@ export const exportSchema = z
   .strictObject({
     filename: z
       .union([filenameSchema, z.custom<ExportFilename>((value) => typeof value === 'function')])
-      .default('{network}_{version}_{language}'),
+      .default('{exportName}_{version}_{language}'),
   })
   .prefault({});

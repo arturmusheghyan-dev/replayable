@@ -30,6 +30,7 @@ export default defineConfig({
     'adapters/meta': 'src/adapters/meta/index.ts',
     'adapters/mintegral': 'src/adapters/mintegral/index.ts',
     'adapters/moloco': 'src/adapters/moloco/index.ts',
+    'adapters/snapchat': 'src/adapters/snapchat/index.ts',
     'adapters/unity': 'src/adapters/unity/index.ts',
   },
   format: ['esm'],

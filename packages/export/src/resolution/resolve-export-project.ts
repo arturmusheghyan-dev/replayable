@@ -43,7 +43,9 @@ function assertUniqueOutputFiles(variants: readonly ExportVariantContext[]): voi
   const variantByOutputFile = new Map<string, string>();
 
   for (const variant of variants) {
-    const existingVariantId = variantByOutputFile.get(variant.outputFile);
+    // macOS and Windows commonly use case-insensitive, Unicode-normalizing filesystems.
+    const outputKey = variant.outputFile.normalize('NFC').toLowerCase();
+    const existingVariantId = variantByOutputFile.get(outputKey);
 
     if (existingVariantId !== undefined) {
       throw new Error(
@@ -51,6 +53,6 @@ function assertUniqueOutputFiles(variants: readonly ExportVariantContext[]): voi
       );
     }
 
-    variantByOutputFile.set(variant.outputFile, variant.variant.id);
+    variantByOutputFile.set(outputKey, variant.variant.id);
   }
 }

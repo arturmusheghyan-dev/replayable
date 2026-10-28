@@ -5,6 +5,7 @@ import { prepareMetaExport } from '#preparation/networks/meta.js';
 import { prepareMintegralExport } from '#preparation/networks/mintegral.js';
 import { prepareMolocoExport } from '#preparation/networks/moloco.js';
 import { preparePreviewExport } from '#preparation/networks/preview.js';
+import { prepareSnapchatExport } from '#preparation/networks/snapchat.js';
 import { prepareUnityExport } from '#preparation/networks/unity.js';
 import type { PreparedExportArtifact } from '#types/artifact.js';
 import type { ExportProjectContext, ExportVariantContext } from '#types/context.js';
@@ -30,6 +31,7 @@ async function prepareExportVariant(
 /** Applies the delivery rules owned by the resolved variant's network. */
 function prepareExportContent(context: ExportVariantContext): Promise<string | Uint8Array> {
   switch (context.variant.network) {
+    case 'adn':
     case 'applovin':
       return prepareAppLovinExport(context);
     case 'google':
@@ -38,12 +40,15 @@ function prepareExportContent(context: ExportVariantContext): Promise<string | U
       return prepareLiftoffExport(context);
     case 'meta':
       return prepareMetaExport(context);
+    case 'tiktok':
     case 'mintegral':
       return prepareMintegralExport(context);
     case 'moloco':
       return prepareMolocoExport(context);
     case 'preview':
       return preparePreviewExport(context);
+    case 'snapchat':
+      return prepareSnapchatExport(context);
     case 'unity':
       return prepareUnityExport(context);
     default:

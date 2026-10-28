@@ -15,6 +15,24 @@ const variantOverrideSchema = z.strictObject({
   params: paramOverridesSchema.optional(),
 });
 
+/** A filename segment, independent of the stable delivery network identifier. */
+const exportNameSchema = z
+  .string()
+  .min(1)
+  .refine(
+    (value) =>
+      value.trim() === value &&
+      !/[<>:"/\\|?*\p{Cc}]/u.test(value) &&
+      !/[. ]$/u.test(value) &&
+      !/\.(?:html|zip)$/iu.test(value),
+    'Network exportName must be a non-empty filename segment without a directory or extension.',
+  );
+
+/** Export labels belong to networks, never creative version overrides. */
+const networkOverrideSchema = variantOverrideSchema.extend({
+  exportName: exportNameSchema.optional(),
+});
+
 /** Named versions normalized to the default version when omitted. */
 export const versionsSchema = withUniqueTrimmedKeys(
   z.record(dimensionNameSchema, variantOverrideSchema),
@@ -26,16 +44,19 @@ export const versionsSchema = withUniqueTrimmedKeys(
 export const networkSchema = z.enum([
   'preview',
   'applovin',
+  'adn',
   'meta',
   'google',
   'liftoff',
   'mintegral',
+  'tiktok',
+  'snapchat',
   'moloco',
   'unity',
 ]);
 
 /** Selected supported networks, normalized to local preview when omitted. */
 export const networksSchema = z
-  .partialRecord(networkSchema, variantOverrideSchema)
+  .partialRecord(networkSchema, networkOverrideSchema)
   .refine((networks) => Object.keys(networks).length > 0, 'At least one network is required.')
   .default({ preview: {} });

@@ -29,14 +29,18 @@ Original code is [MIT licensed](https://github.com/replayablejs/replayable/blob/
 their accompanying license terms.
 
 Customize delivery names with `export.filename` in `replayable.config.ts`, for example
-`'{name}_{version}_{network}_{language}'`. The default remains
-`'{network}_{version}_{language}'`. The exporter normalizes names and adds the
+`'{name}_{version}_{exportName}_{language}'`. The default is
+`'{exportName}_{version}_{language}'`. The `exportName` value comes from the selected
+network's configuration and falls back to its network ID, preserving existing filenames
+when no label is configured. `{network}` always means the stable network ID.
+The exporter normalizes names and adds the
 network's extension automatically. Templates cannot contain directory separators,
 unknown placeholders, or an explicit `.html`/`.zip` extension. Colliding names are
 rejected before exports are written.
 
 For full control, provide a synchronous callback. It receives the original project
-name, playable version name, network, and language. Its return value preserves
+name, playable version name, network, language, and the resolved `exportName`. The
+`network` input remains the stable ID. Its return value preserves
 casing, spaces, and hyphens:
 
 ```ts

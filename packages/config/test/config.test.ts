@@ -842,7 +842,7 @@ it('defaults export naming and accepts a custom template', () => {
     name: 'City Builder',
     localization: { fallback: 'en', languages: ['en'] },
   };
-  expect(defineConfig(input).export.filename).toBe('{network}_{version}_{language}');
+  expect(defineConfig(input).export.filename).toBe('{exportName}_{version}_{language}');
   expect(
     defineConfig({ ...input, export: { filename: '{name}_{language}_{network}_{version}' } }).export
       .filename,
@@ -868,4 +868,133 @@ it.each([
       export: { filename },
     }),
   ).toThrow(/export/u);
+});
+
+it('resolves the new delivery networks independently across versions and languages', () => {
+  const config = defineConfig({
+    assets,
+    screen,
+    store,
+    name: 'Networks',
+    localization: { fallback: 'en', languages: ['en', 'fr'] },
+    params: { speed: { type: 'number', label: 'Speed', default: 1 } },
+    versions: { first: { params: { speed: 2 } }, second: {} },
+    networks: {
+      applovin: { params: { speed: 3 } },
+      adn: {
+        params: { speed: 4 },
+        audio: false,
+        assets: { exclude: ['images/extra.png'] },
+        completion: { duration: 9 },
+      },
+      mintegral: {},
+      tiktok: { params: { speed: 5 } },
+      snapchat: {},
+    },
+    analytics: {
+      buildId: 'NET_TEST',
+      destinations: {
+        test: { type: 'posthog', endpoint: 'https://example.com', projectToken: 'phc_test' },
+      },
+      routes: { adn: 'test', tiktok: 'test', snapchat: false },
+    },
+  });
+  const variants = createVariants(config);
+  expect(variants).toHaveLength(20);
+  expect(new Set(variants.map((v) => v.id)).size).toBe(20);
+  for (const variant of variants.filter((v) => v.network === 'adn')) {
+    expect(variant).toMatchObject({
+      params: { speed: 4 },
+      audio: false,
+      completion: { duration: 9 },
+      analytics: { buildId: 'NET_TEST' },
+    });
+    expect(variant.assets.exclude).toContain('images/extra.png');
+    expect(variant.assets.exclude).toContain('sounds/**');
+  }
+  for (const variant of variants.filter((v) => v.network === 'tiktok')) {
+    expect(variant).toMatchObject({ params: { speed: 5 }, analytics: { buildId: 'NET_TEST' } });
+  }
+  for (const variant of variants.filter((v) => v.network === 'applovin')) {
+    expect(variant).toMatchObject({ params: { speed: 3 }, audio: true, analytics: false });
+  }
+  for (const variant of variants.filter((v) => v.network === 'snapchat')) {
+    expect(variant.analytics).toBe(false);
+  }
+});
+
+it('keeps network export labels separate from variant and analytics identity', () => {
+  const config = defineConfig({
+    name: 'Labels',
+    localization: { fallback: 'en', languages: ['en'] },
+    assets,
+    screen,
+    store,
+    networks: { meta: { exportName: 'Facebook' }, adn: { exportName: 'Helix' } },
+    analytics: {
+      buildId: 'LABELS',
+      destinations: {
+        test: { type: 'posthog', endpoint: 'https://example.com', projectToken: 'phc_test' },
+      },
+      routes: { meta: 'test', adn: 'test' },
+    },
+  });
+  expect(config.networks.meta?.exportName).toBe('Facebook');
+  expect(
+    createVariants(config).map(({ network, id, analytics }) => ({ network, id, analytics })),
+  ).toEqual([
+    expect.objectContaining({
+      network: 'adn',
+      id: 'default/adn/en',
+      analytics: expect.objectContaining({ buildId: 'LABELS' }),
+    }),
+    expect.objectContaining({
+      network: 'meta',
+      id: 'default/meta/en',
+      analytics: expect.objectContaining({ buildId: 'LABELS' }),
+    }),
+  ]);
+});
+
+it.each([
+  '',
+  ' ',
+  '../label',
+  'folder\\label',
+  'bad:name',
+  '.',
+  '..',
+  'label.',
+  'label ',
+  ' label',
+  'label.html',
+  'label.ZIP',
+  'bad\u0000name',
+])('rejects unsafe network exportName %j', (exportName) => {
+  expect(() =>
+    defineConfig({
+      name: 'Labels',
+      localization: { fallback: 'en', languages: ['en'] },
+      assets,
+      screen,
+      store,
+      networks: { meta: { exportName } },
+    }),
+  ).toThrow(/exportName/u);
+});
+
+it('does not accept exportName as a version override', () => {
+  expect(() =>
+    defineConfig({
+      name: 'Labels',
+      localization: { fallback: 'en', languages: ['en'] },
+      assets,
+      screen,
+      store,
+      versions: {
+        // @ts-expect-error Export labels are specific to networks, never versions.
+        first: { exportName: 'other' },
+      },
+    }),
+  ).toThrow(/exportName/u);
 });
