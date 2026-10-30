@@ -16,6 +16,12 @@ describe('runtime development configuration', () => {
           emit: { assets: 'src/assets/assets.ts' },
         },
         devtools: { stats },
+        analytics: {
+          buildId: 'runtime-config',
+          releaseVersion: '0.0.1',
+          logging: true,
+          sending: false,
+        },
         localization: { fallback: 'en', languages: ['en'] },
         name: 'runtime-config',
         params: {
@@ -62,6 +68,13 @@ describe('runtime development configuration', () => {
 
         expect(definition).toBeDefined();
         expect(JSON.parse(definition!)).toMatchObject({ config: { devtools: config.devtools } });
+        expect(JSON.parse(definition!).config).toMatchObject({
+          analytics: { buildId: 'runtime-config', releaseVersion: '0.0.1', destination: false },
+          version: 'default',
+        });
+        expect(JSON.stringify(JSON.parse(definition!).config.analytics)).not.toContain(
+          'projectToken',
+        );
         expect(JSON.parse(definition!).config.params).toEqual({
           tutorial: {
             enabled: false,

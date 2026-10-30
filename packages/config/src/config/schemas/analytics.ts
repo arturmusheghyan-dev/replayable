@@ -40,6 +40,7 @@ export const analyticsSchema = z
     z
       .strictObject({
         buildId: requiredStringSchema,
+        releaseVersion: requiredStringSchema.optional(),
         destinations: z.record(dimensionNameSchema, postHogDestinationSchema).default({}),
         logging: networkSwitchSchema.default(false),
         sending: networkSwitchSchema.default(true),

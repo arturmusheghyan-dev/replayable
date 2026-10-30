@@ -24,6 +24,8 @@ export type RuntimeAnalyticsConfig =
   | false
   | {
       readonly buildId: string;
+      /** Package release, separate from the stable playable ID and creative version. */
+      readonly releaseVersion?: string;
       readonly destination: RuntimeAnalyticsDestination | false;
       /** Console event names and optional values only; omitted means no logging. */
       readonly logging?: boolean;
@@ -32,6 +34,7 @@ export type RuntimeAnalyticsConfig =
 
 export interface NormalizedAnalyticsEvent {
   readonly buildId: string;
+  readonly releaseVersion?: string;
   readonly elapsedMs: number;
   readonly eventName: string;
   readonly height: number;

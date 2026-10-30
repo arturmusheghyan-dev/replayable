@@ -4,7 +4,7 @@ The maintained Studio engine is `arturmusheghyan-dev/replayable`, branch `main`.
 
 ## Distribution
 
-Studio consumers install exact GitHub Release archive URLs, not Git branches or upstream npm packages. The combined release is `studio-preview.4`, package version `0.1.0-studio-preview.4`. It adds independent console logging and sending controls to the parameters and analytics available in preview 2. Source manifests retain the upstream source version; only staged archive manifests receive the fork version and fixed internal archive URLs. All eleven public packages use one fork version, including Pixi. Archives are private for npm publication, but installable through their GitHub URLs.
+Studio consumers install exact GitHub Release archive URLs, not Git branches or upstream npm packages. The current release is `studio-preview.5`, package version `0.1.0-studio-preview.5`. It separates the stable playable identity from the optional package release number while retaining the analytics controls, structured parameters and network support from preview 4. Source manifests retain the upstream source version; only staged archive manifests receive the fork version and fixed internal archive URLs. All eleven public packages use one fork version, including Pixi. Archives are private for npm publication, but installable through their GitHub URLs.
 
 Run frozen installation and `pnpm check`, the three example exports, and `pnpm packages:check` first. Commit/push the reviewed source to this fork's main and require CI's three platform checks to pass. From that clean, built commit run:
 
@@ -22,7 +22,8 @@ Analytics defaults to `false`. Configure destinations, explicit network routes, 
 
 ```ts
 analytics: {
-  buildId: 'my-playable@0.0.0',
+  buildId: 'my-playable',
+  releaseVersion: '0.0.1',
   destinations: {
     pilot: { type: 'posthog', endpoint: 'https://us.i.posthog.com/i/v0/e/', projectToken: 'phc_REPLACE' },
   },
@@ -33,7 +34,26 @@ analytics: {
 
 Use `playable.analytics.track('tutorial_completed')` or `playable.analytics.track('zones_created', count)`. Undeclared events, invalid names, and out-of-bounds/noninteger payloads are rejected. The `replayable_` prefix is reserved.
 
-The original automatic events are `replayable_started`, `replayable_first_frame`, `replayable_first_interaction`, `replayable_completed`, and `replayable_cta`. Completion integer values remain success 0, failure 1, skip 2, duration timeout 3, inactivity timeout 4. Events carry session ID, ordered sequence, build ID, creative version, network, language, viewport, orientation, and wall-clock elapsed timing. The first visible ready state starts collection; early first interaction is retained. Limits are 32 events per name and 256 per session. Transport failure does not stop gameplay and no delivery success is promised by the no-CORS transport.
+The original automatic events are `replayable_started`, `replayable_first_frame`, `replayable_first_interaction`, `replayable_completed`, and `replayable_cta`. Completion integer values remain success 0, failure 1, skip 2, duration timeout 3, inactivity timeout 4. Events carry session ID, ordered sequence, build ID, creative version, optional release version, network, language, viewport, orientation, and wall-clock elapsed timing. The first visible ready state starts collection; early first interaction is retained. Limits are 32 events per name and 256 per session. Transport failure does not stop gameplay and no delivery success is promised by the no-CORS transport.
+
+## Separate playable and release identifiers
+
+Set `buildId` from the consumer's package name and `releaseVersion` from its package version.
+PostHog receives these as `build_id` and `release_version`; its existing `version` property remains
+the full creative identifier selected by the runtime, such as `pl114_003`. A release bump therefore
+changes only `release_version`. Duplication and promotion can assign a new package identity.
+
+`releaseVersion` is an optional nonempty string. Legacy configurations and fixed build IDs remain
+valid; the engine omits the new property when absent and never extracts a release from `buildId`.
+This additive property retains event `schema_version: 1`. Every automatic and custom event uses the
+same metadata, including terminal beacon delivery. Console logs and the Studio event bridge retain
+their existing event-name/value-only output.
+
+Existing PostHog history and already built playables do not change. For historical reporting,
+map known legacy `name@release` IDs to the stable name and keep the suffix as release metadata;
+do not strip arbitrary identifiers or rewrite events automatically. Rebuild and separately publish
+consumers to adopt the new fields. Keep preview 4 packages available for rollback, reverting the
+new configuration field together with dependency pins.
 
 ## Validation
 

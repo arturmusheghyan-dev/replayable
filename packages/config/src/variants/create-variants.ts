@@ -104,6 +104,9 @@ function resolveAnalytics(
 
   return {
     buildId: config.analytics.buildId,
+    ...(config.analytics.releaseVersion === undefined
+      ? {}
+      : { releaseVersion: config.analytics.releaseVersion }),
     destination,
     logging: logEvents,
     events: config.analytics.events,

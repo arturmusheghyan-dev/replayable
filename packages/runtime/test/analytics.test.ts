@@ -35,6 +35,7 @@ describe('analytics', () => {
     const analytics = createAnalytics({
       config: {
         buildId: 'TEST_BUILD',
+        releaseVersion: '0.0.1',
         destination: {
           type: 'posthog',
           endpoint: 'https://us.i.posthog.com/i/v0/e/',
@@ -51,7 +52,7 @@ describe('analytics', () => {
           };
         },
       },
-      runtime: { language: 'en', network: 'preview', version: 'default' },
+      runtime: { language: 'en', network: 'preview', version: 'pl114_003' },
     });
 
     analytics.start();
@@ -74,6 +75,40 @@ describe('analytics', () => {
     expect(new Set(events.map(({ sessionId }) => sessionId))).toHaveLength(1);
     expect(events[3]).toMatchObject({ integerValue: 2, buildId: 'TEST_BUILD' });
     expect(events[4]).toMatchObject({ integerValue: 0 });
+    for (const event of events) {
+      expect(event).toMatchObject({
+        buildId: 'TEST_BUILD',
+        version: 'pl114_003',
+        releaseVersion: '0.0.1',
+        schemaVersion: 1,
+      });
+    }
+  });
+
+  it('omits release metadata for legacy IDs without guessing from their suffix', () => {
+    const analytics = createAnalytics(testOptions({ buildId: 'legacy@2.3.4' }));
+    analytics.start();
+    analytics.track('counted', 0);
+    for (const [event] of transport.send.mock.calls) {
+      expect(event.buildId).toBe('legacy@2.3.4');
+      expect(event).not.toHaveProperty('releaseVersion');
+    }
+  });
+
+  it('changes only release metadata when the same creative is republished', () => {
+    for (const releaseVersion of ['0.0.1', '0.0.2']) {
+      createAnalytics(testOptions({ buildId: 'po2-pl114', releaseVersion })).start();
+    }
+    expect(
+      transport.send.mock.calls.map(([event]) => ({
+        buildId: event.buildId,
+        version: event.version,
+        releaseVersion: event.releaseVersion,
+      })),
+    ).toEqual([
+      { buildId: 'po2-pl114', version: 'default', releaseVersion: '0.0.1' },
+      { buildId: 'po2-pl114', version: 'default', releaseVersion: '0.0.2' },
+    ]);
   });
 
   it('rejects undeclared or invalid custom events and caps each event name at 32', () => {

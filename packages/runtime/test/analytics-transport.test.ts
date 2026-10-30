@@ -10,7 +10,8 @@ const destination = {
   projectToken: 'phc_test',
 };
 const event: NormalizedAnalyticsEvent = {
-  buildId: 'test@0.0.0',
+  buildId: 'test',
+  releaseVersion: '0.0.1',
   elapsedMs: 10,
   eventName: 'zones_created',
   height: 844,
@@ -55,7 +56,8 @@ describe('analytics transport', () => {
       event: 'zones_created',
       distinct_id: 'test-session',
       properties: {
-        build_id: 'test@0.0.0',
+        build_id: 'test',
+        release_version: '0.0.1',
         integer_value: 2,
         version: 'pl01_001',
         network: 'preview',
@@ -76,7 +78,32 @@ describe('analytics transport', () => {
     sendBeacon.mockReturnValue(false);
     transport.send(event, { terminal: true });
     expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch.mock.calls[0]![1]?.body).toBe(sendBeacon.mock.calls[0]![1]);
+    const body = sendBeacon.mock.calls[0]![1];
+    if (typeof body !== 'string') {
+      throw new Error('Expected JSON beacon body');
+    }
+    expect(JSON.parse(body)).toMatchObject({
+      properties: {
+        build_id: 'test',
+        version: 'pl01_001',
+        release_version: '0.0.1',
+        schema_version: 1,
+      },
+    });
   });
+  it('omits release_version for legacy event payloads', () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(new Response());
+    vi.stubGlobal('fetch', fetch);
+    const { releaseVersion: _releaseVersion, ...legacy } = event;
+    createAnalyticsTransport(destination).send(legacy, { terminal: false });
+    const body = fetch.mock.calls[0]![1]?.body;
+    if (typeof body !== 'string') {
+      throw new Error('Expected JSON body');
+    }
+    expect(JSON.parse(body).properties).not.toHaveProperty('release_version');
+  });
+
   it('contains synchronous and asynchronous network failures', async () => {
     const fetch = vi.fn<typeof globalThis.fetch>().mockRejectedValue(new Error('offline'));
     vi.stubGlobal('fetch', fetch);

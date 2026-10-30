@@ -45,6 +45,7 @@ describe('Replayable config', () => {
     const config = defineConfig({
       analytics: {
         buildId: 'TEST_BUILD',
+        releaseVersion: '0.0.1',
         destinations: {
           pilot: {
             type: 'posthog',
@@ -78,10 +79,40 @@ describe('Replayable config', () => {
       createVariants(config).map((variant) => [variant.network, variant]),
     );
 
-    expect(variants.preview?.analytics).toMatchObject({ buildId: 'TEST_BUILD' });
-    expect(variants.unity?.analytics).toMatchObject({ buildId: 'TEST_BUILD' });
+    expect(variants.preview?.analytics).toMatchObject({
+      buildId: 'TEST_BUILD',
+      releaseVersion: '0.0.1',
+    });
+    expect(variants.unity?.analytics).toMatchObject({
+      buildId: 'TEST_BUILD',
+      releaseVersion: '0.0.1',
+    });
     expect(variants.google?.analytics).toBe(false);
     expect(variants.preview?.params).toEqual({ tuning: { enabled: false, text: '', amount: 0 } });
+  });
+
+  it('accepts optional release metadata without deriving it from the build ID', () => {
+    const project = {
+      assets,
+      screen,
+      store,
+      name: 'analytics-release',
+      localization: { fallback: 'en', languages: ['en'] },
+    };
+    const legacy = defineConfig({
+      ...project,
+      analytics: { buildId: 'legacy@2.3.4', logging: true },
+    });
+    expect(legacy.analytics).not.toHaveProperty('releaseVersion');
+    expect(createVariants(legacy)[0]!.analytics).not.toHaveProperty('releaseVersion');
+    for (const releaseVersion of ['', '   ', 1, null, false]) {
+      expect(
+        replayableConfigSchema.safeParse({
+          ...project,
+          analytics: { buildId: 'stable', releaseVersion, logging: true },
+        }).success,
+      ).toBe(false);
+    }
   });
 
   it('keeps sending enabled and logging disabled by default', () => {
@@ -150,6 +181,7 @@ describe('Replayable config', () => {
       networks: { preview: {}, unity: {}, meta: {} },
       analytics: {
         buildId: 'TEST',
+        releaseVersion: '0.0.2',
         logging: { preview: true },
         sending: { preview: false },
         destinations: {
@@ -165,8 +197,13 @@ describe('Replayable config', () => {
     const variants = Object.fromEntries(
       createVariants(config).map((v) => [v.network, v.analytics]),
     );
-    expect(variants.preview).toMatchObject({ logging: true, destination: false });
+    expect(variants.preview).toMatchObject({
+      logging: true,
+      destination: false,
+      releaseVersion: '0.0.2',
+    });
     expect(variants.unity).toMatchObject({
+      releaseVersion: '0.0.2',
       logging: false,
       destination: { projectToken: 'phc_test' },
     });

@@ -48,6 +48,7 @@ export function createAnalytics(options: CreateAnalyticsOptions): AnalyticsContr
     const state = options.getState();
     const event: NormalizedAnalyticsEvent = {
       buildId: config.buildId,
+      ...(config.releaseVersion === undefined ? {} : { releaseVersion: config.releaseVersion }),
       elapsedMs: Math.max(0, Math.round(now - startedTime)),
       eventName,
       height: state.viewport.height,

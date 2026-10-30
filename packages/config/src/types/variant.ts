@@ -17,6 +17,7 @@ export interface PlayableVariant {
     | false
     | {
         readonly buildId: string;
+        readonly releaseVersion?: string;
         readonly destination: AnalyticsDestination | false;
         readonly logging: boolean;
         readonly events: Readonly<Record<string, AnalyticsEventDefinition>>;

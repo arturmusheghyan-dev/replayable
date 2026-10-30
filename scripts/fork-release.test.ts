@@ -55,6 +55,6 @@ test('fork packaging refuses missing internal modules and unresolved local depen
 });
 
 test('combined release keeps a single fork package version', () => {
-  assert.equal(tag, 'studio-preview.4');
-  assert.equal(version, '0.1.0-studio-preview.4');
+  assert.equal(tag, 'studio-preview.5');
+  assert.equal(version, '0.1.0-studio-preview.5');
 });
