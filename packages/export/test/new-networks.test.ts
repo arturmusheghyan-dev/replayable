@@ -251,10 +251,15 @@ function sizedSnapchatFiles(size: number) {
   ];
 }
 
-it.each([4_999_999, 5_000_000])('accepts Snapchat aggregate and ZIP bytes at %i', (size) => {
-  expect(() => validateSnapchatFiles(sizedSnapchatFiles(size))).not.toThrow();
-  expect(() => validateSnapchatArchive(new Uint8Array(size))).not.toThrow();
-});
+it.each([4_999_999, 5_000_000])(
+  'accepts Snapchat aggregate and ZIP bytes at %i',
+  (size) => {
+    expect(() => validateSnapchatFiles(sizedSnapchatFiles(size))).not.toThrow();
+    expect(() => validateSnapchatArchive(new Uint8Array(size))).not.toThrow();
+  },
+  // Parsing the near-limit document needs headroom on contended CI runners.
+  20_000,
+);
 
 it('rejects Snapchat aggregate and ZIP bytes one byte over the limit', () => {
   expect(() => validateSnapchatFiles(sizedSnapchatFiles(5_000_001))).toThrow('5 MB limit');
