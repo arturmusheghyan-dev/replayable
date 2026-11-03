@@ -14,7 +14,7 @@ The product is Replayable; GitHub and npm use the `replayablejs` organization.
 
 ## Studio fork
 
-This fork is maintained on `main`, combining Studio-compatible structured parameters with optional analytics. PlayableStudio templates consume pinned GitHub release archives, not the upstream npm instructions below. See [Studio fork releases and analytics](docs/guide/studio-fork.md) for `studio-preview.2`, event behavior, verification, and rollback.
+This fork is maintained on `main`, combining Studio-compatible structured parameters with optional analytics. PlayableStudio templates consume pinned GitHub release archives, not the upstream npm instructions below. See [Studio fork releases and analytics](docs/guide/studio-fork.md) for `studio-preview.6`, event behavior, verification, and rollback.
 
 ## Alpha release
 

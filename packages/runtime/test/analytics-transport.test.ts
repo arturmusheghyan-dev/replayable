@@ -10,6 +10,8 @@ const destination = {
   projectToken: 'phc_test',
 };
 const event: NormalizedAnalyticsEvent = {
+  audioMuted: false,
+  avgFps: 59.25,
   buildId: 'test',
   releaseVersion: '0.0.1',
   elapsedMs: 10,
@@ -59,6 +61,8 @@ describe('analytics transport', () => {
         build_id: 'test',
         release_version: '0.0.1',
         integer_value: 2,
+        audio_muted: false,
+        avg_fps: 59.25,
         version: 'pl01_001',
         network: 'preview',
         sequence: 3,
@@ -125,6 +129,8 @@ describe('analytics transport', () => {
     const analytics = createDisabledAnalytics({
       config: false,
       getState,
+      getAudioMuted: () => false,
+      frameObservations: { add: () => () => {} },
       postRender: { add: () => () => {} },
       runtime: { language: 'en', network: 'meta', version: 'default' },
     });
@@ -138,3 +144,36 @@ describe('analytics transport', () => {
     expect(log).not.toHaveBeenCalled();
   });
 });
+
+it.each([
+  'persistent_cta',
+  'cta_endcard',
+  'banner',
+  'teaser_tap',
+  'gameplay_tap',
+  'auto_redirect',
+  'unknown',
+] as const)(
+  'preserves %s attribution and shared properties in beacon and fallback bodies',
+  (ctaSource) => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(new Response());
+    const sendBeacon = vi.fn<typeof navigator.sendBeacon>().mockReturnValue(true);
+    vi.stubGlobal('fetch', fetch);
+    vi.stubGlobal('navigator', { sendBeacon });
+    const transport = createAnalyticsTransport(destination);
+    const cta = { ...event, eventName: 'replayable_cta', ctaSource, audioMuted: true };
+    transport.send(cta, { terminal: true });
+    const body = sendBeacon.mock.calls[0]![1];
+    if (typeof body !== 'string') {
+      throw new Error('Expected JSON beacon body');
+    }
+    expect(JSON.parse(body).properties).toMatchObject({
+      cta_source: ctaSource,
+      audio_muted: true,
+      avg_fps: 59.25,
+    });
+    sendBeacon.mockReturnValue(false);
+    transport.send(cta, { terminal: true });
+    expect(fetch.mock.calls[0]![1]?.body).toBe(body);
+  },
+);

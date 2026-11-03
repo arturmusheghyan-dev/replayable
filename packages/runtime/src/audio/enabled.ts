@@ -52,6 +52,7 @@ export function createAudio(loader: AssetLoader): AudioController {
   });
 
   return {
+    isMuted: () => muted,
     get muted(): boolean {
       return muted;
     },

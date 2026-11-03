@@ -25,6 +25,8 @@ import type {
   UpdateContext,
 } from '#types/update.js';
 
+import type { OpenStoreOptions } from './store.js';
+
 /** Resolved, browser-safe configuration for the active playable variant. */
 export interface RuntimeConfig {
   /** External analytics resolved for this network, or false when compiled out. */
@@ -169,5 +171,5 @@ export interface Playable {
   /** Commits the playable's terminal outcome exactly once. */
   complete(reason: PlayableCompletionReason): void;
   /** Opens the resolved app-store destination through the active host. */
-  openStore(): void;
+  openStore(options?: OpenStoreOptions): void;
 }

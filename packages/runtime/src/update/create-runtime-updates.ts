@@ -20,6 +20,8 @@ import { createUpdateChannel } from '#update/create-update-channel.js';
  * partial fixed step so paused time cannot leak into a later frame.
  */
 export function createRuntimeUpdates(): RuntimeUpdates {
+  // Passive analytics must never keep an otherwise idle scheduler running.
+  const frameObservations = createUpdateChannel<number | undefined>(() => {});
   const activeTime = createUpdateChannel<number>(updateScheduler);
   const fixedUpdate = createFixedUpdate(updateScheduler);
   const frameUpdate = createFrameUpdate(updateScheduler);
@@ -30,6 +32,7 @@ export function createRuntimeUpdates(): RuntimeUpdates {
   let visible = false;
 
   return {
+    frameObservations,
     activeTime,
     fixedUpdate: fixedUpdate.channel,
     update: frameUpdate.channel,
@@ -63,6 +66,7 @@ export function createRuntimeUpdates(): RuntimeUpdates {
 
   /** Renderers remain independent; only the shared Motion phase determines ordering. */
   function handlePostRender(timestamp: number): void {
+    frameObservations.dispatch(timestamp);
     if (postRender.hasListeners()) {
       postRender.dispatch({ timestamp });
     }
@@ -92,6 +96,7 @@ export function createRuntimeUpdates(): RuntimeUpdates {
     }
 
     scheduler.stop();
+    frameObservations.dispatch(undefined);
     fixedUpdate.clearPendingTime();
   }
 }

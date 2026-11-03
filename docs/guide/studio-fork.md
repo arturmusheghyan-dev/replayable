@@ -4,7 +4,7 @@ The maintained Studio engine is `arturmusheghyan-dev/replayable`, branch `main`.
 
 ## Distribution
 
-Studio consumers install exact GitHub Release archive URLs, not Git branches or upstream npm packages. The current release is `studio-preview.5`, package version `0.1.0-studio-preview.5`. It separates the stable playable identity from the optional package release number while retaining the analytics controls, structured parameters and network support from preview 4. Source manifests retain the upstream source version; only staged archive manifests receive the fork version and fixed internal archive URLs. All eleven public packages use one fork version, including Pixi. Archives are private for npm publication, but installable through their GitHub URLs.
+Studio consumers install exact GitHub Release archive URLs, not Git branches or upstream npm packages. The current release is `studio-preview.6`, package version `0.1.0-studio-preview.6`. It separates the stable playable identity from the optional package release number while retaining the analytics controls, structured parameters and network support from preview 4. Source manifests retain the upstream source version; only staged archive manifests receive the fork version and fixed internal archive URLs. All eleven public packages use one fork version, including Pixi. Archives are private for npm publication, but installable through their GitHub URLs.
 
 Run frozen installation and `pnpm check`, the three example exports, and `pnpm packages:check` first. Commit/push the reviewed source to this fork's main and require CI's three platform checks to pass. From that clean, built commit run:
 
@@ -89,3 +89,31 @@ Log-only variants omit destination credentials and select the disabled transport
 ## Combined network release
 
 `studio-preview.4` combines the analytics logging/sending controls with network support. Helix (`adn`) and TikTok retain their own runtime/analytics identities while reusing the AppLovin and Mintegral integrations. Snapchat requires portrait output and forbids an outbound analytics destination; disabled analytics and logging-only configurations are supported. No new analytics route is enabled automatically. See [export documentation](../reference/export.md) for packaging and manual host checks. Keep `studio-preview.3` available for rollback; consumers must revert new network configuration and package pins together.
+
+## Frame rate, effective mute and store attribution (preview 6)
+
+Every automatic and custom event includes `audio_muted`, sampled from the internal applied
+mute and the current runtime audio permission. It includes in-game/Studio preview muting,
+disabled audio, host volume zero and runtime interaction/visibility restrictions. This describes
+runtime suppression, not speaker output, device volume, AudioContext unlock success, or whether
+a sound is playing. The public `audio.muted` property still represents the playable preference.
+
+`avg_fps` is cumulative completed frame intervals divided by their total real time, rounded to
+two decimals. It is omitted before a usable interval. Sampling starts with rendering after
+readiness, excludes browser-hidden/host-paused/stopped intervals, and includes slow foreground
+frames. The passive observer adds no scheduling demand and never enables the Stats overlay.
+The frame metric describes runtime frame cadence, not GPU completion or display refresh.
+Sampling continues through completion/end-card rendering for subsequent CTA events.
+
+`playable.openStore({ source: 'persistent_cta' })` reports `cta_source` only on
+`replayable_cta`. The exported `PlayableCtaSource` type supports `persistent_cta`, `cta_endcard`,
+`banner`, `teaser_tap`, `gameplay_tap`, `auto_redirect`, and `unknown`. Existing no-argument calls
+report `unknown`. Source attribution never changes host store routing or implies completion.
+Custom `analytics.track(name, integerValue?)`, console log lines, schema version 1, event limits,
+and the disabled-analytics path are unchanged. PostHog fetch and terminal beacon use the same
+properties. Logs/Studio's existing observer continue showing event names and integer values only.
+
+Completion retains success 0, failure 1, skip 2, duration timeout 3, inactivity timeout 4.
+Consumers must report the real terminal gameplay outcome once, before a noninteractive teaser,
+and must not infer success merely from showing an end card or requesting a store redirect.
+Old exports retain their old payloads until rebuilt; publishing packages does not migrate consumers.

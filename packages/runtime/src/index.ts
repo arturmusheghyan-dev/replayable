@@ -5,6 +5,7 @@
  */
 
 export { playable } from './playable.js';
+export type { OpenStoreOptions, PlayableCtaSource } from '#types/store.js';
 export type { PlayableAnalytics, RuntimeAnalyticsConfig } from '#types/analytics.js';
 export type {
   AudioOneShotOptions,

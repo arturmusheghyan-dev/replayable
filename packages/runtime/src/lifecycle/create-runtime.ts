@@ -17,6 +17,7 @@ import type {
   RuntimeEventMap,
   RuntimeState,
 } from '#types/runtime.js';
+import type { OpenStoreOptions } from '#types/store.js';
 import { createRuntimeUpdates } from '#update/create-runtime-updates.js';
 
 /**
@@ -37,6 +38,8 @@ export function createRuntime({ adapter, assets, definition }: CreateRuntimeOpti
   const analytics = createAnalytics({
     config: config.analytics,
     getState: () => runtimeState.get(),
+    getAudioMuted: () => audio.isMuted() || !runtimeState.get().audio.allowed,
+    frameObservations: runtimeUpdates.frameObservations,
     postRender: runtimeUpdates.postRender,
     runtime: {
       language: config.localization.language,
@@ -115,8 +118,8 @@ export function createRuntime({ adapter, assets, definition }: CreateRuntimeOpti
   }
 
   /** Opens the platform-specific store destination through the active host. */
-  function openStore(): void {
-    analytics.recordCta();
+  function openStore(options?: OpenStoreOptions): void {
+    analytics.recordCta(options?.source);
     adapter.openStore(storeUrl);
   }
 

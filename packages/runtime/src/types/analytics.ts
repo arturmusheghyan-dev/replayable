@@ -1,5 +1,6 @@
 import type { PlayableCompletionReason } from './completion.js';
 import type { RuntimeState } from './runtime.js';
+import type { PlayableCtaSource } from './store.js';
 import type { PostRenderContext, UpdateChannel } from './update.js';
 
 /** Playable-owned analytics API. Custom events must be declared in project configuration. */
@@ -33,6 +34,9 @@ export type RuntimeAnalyticsConfig =
     };
 
 export interface NormalizedAnalyticsEvent {
+  readonly audioMuted: boolean;
+  readonly avgFps?: number;
+  readonly ctaSource?: PlayableCtaSource;
   readonly buildId: string;
   readonly releaseVersion?: string;
   readonly elapsedMs: number;
@@ -57,7 +61,7 @@ export interface AnalyticsTransport {
 
 export interface AnalyticsController extends PlayableAnalytics {
   recordCompletion(reason: PlayableCompletionReason): void;
-  recordCta(): void;
+  recordCta(source?: PlayableCtaSource): void;
   recordFirstInteraction(): void;
   start(): void;
 }
@@ -65,6 +69,8 @@ export interface AnalyticsController extends PlayableAnalytics {
 export interface CreateAnalyticsOptions {
   readonly config: RuntimeAnalyticsConfig;
   readonly getState: () => RuntimeState;
+  readonly getAudioMuted: () => boolean;
+  readonly frameObservations: UpdateChannel<number | undefined>;
   readonly postRender: UpdateChannel<PostRenderContext>;
   readonly runtime: {
     readonly language: string;

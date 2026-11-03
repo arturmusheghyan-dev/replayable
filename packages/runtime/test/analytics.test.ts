@@ -44,6 +44,8 @@ describe('analytics', () => {
         events: { target_tapped: { integer: { min: 1, max: 2 } } },
       },
       getState: createRuntimeState,
+      getAudioMuted: () => false,
+      frameObservations: { add: () => () => {} },
       postRender: {
         add(callback) {
           firstFrame = callback;
@@ -123,6 +125,8 @@ describe('analytics', () => {
         events: { counted: { integer: { min: 0, max: 1 } } },
       },
       getState: createRuntimeState,
+      getAudioMuted: () => false,
+      frameObservations: { add: () => () => {} },
       postRender: { add: () => () => {} },
       runtime: { language: 'en', network: 'unity', version: 'default' },
     });
@@ -274,6 +278,8 @@ function testOptions(
       ...overrides,
     },
     getState: createRuntimeState,
+    getAudioMuted: () => false,
+    frameObservations: { add: () => () => {} },
     postRender: { add: () => () => {} },
     runtime: { language: 'en', network: 'preview', version: 'default' },
   };
@@ -300,4 +306,57 @@ it.each(['adn', 'tiktok'] as const)('retains %s identity in analytics events', (
   for (const [event] of transport.send.mock.calls) {
     expect(event.network).toBe(network);
   }
+});
+
+it('adds current audio and cumulative FPS to every event, with CTA-only attribution', () => {
+  transport.send.mockClear();
+  let frame: ((timestamp: number | undefined) => void) | undefined;
+  let muted = true;
+  const analytics = createAnalytics({
+    ...testOptions(),
+    getAudioMuted: () => muted,
+    frameObservations: {
+      add(callback) {
+        frame = callback;
+        return () => {
+          frame = undefined;
+        };
+      },
+    },
+  });
+  analytics.start();
+  expect(transport.send.mock.calls[0]![0]).toMatchObject({ audioMuted: true });
+  expect(transport.send.mock.calls[0]![0]).not.toHaveProperty('avgFps');
+  frame?.(100);
+  frame?.(120);
+  muted = false;
+  analytics.recordFirstInteraction();
+  analytics.track('counted', 0);
+  analytics.recordCompletion('failure');
+  analytics.recordCta('persistent_cta');
+  analytics.recordCta();
+  const events = transport.send.mock.calls.slice(1).map(([event]) => event);
+  for (const event of events) {
+    expect(event).toMatchObject({ audioMuted: false, avgFps: 50 });
+  }
+  expect(events[0]).not.toHaveProperty('ctaSource');
+  expect(events[2]).toMatchObject({ eventName: 'replayable_completed', integerValue: 1 });
+  expect(events[3]).toMatchObject({ eventName: 'replayable_cta', ctaSource: 'persistent_cta' });
+  expect(events[4]).toMatchObject({ ctaSource: 'unknown' });
+});
+it.each([
+  ['success', 0],
+  ['failure', 1],
+  ['skip', 2],
+  ['duration-timeout', 3],
+  ['inactivity-timeout', 4],
+] as const)('preserves completion mapping for %s', (reason, integerValue) => {
+  transport.send.mockClear();
+  const analytics = createAnalytics(testOptions());
+  analytics.start();
+  analytics.recordCompletion(reason);
+  expect(transport.send.mock.calls.at(-1)![0]).toMatchObject({
+    eventName: 'replayable_completed',
+    integerValue,
+  });
 });

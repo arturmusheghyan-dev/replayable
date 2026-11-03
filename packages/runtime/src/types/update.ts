@@ -140,6 +140,8 @@ export interface FrameUpdate {
 
 /** Runtime lifecycle controls, simulation updates, and the post-render phase. */
 export interface RuntimeUpdates {
+  /** Passive frame observations; undefined discards a stopped scheduler's time baseline. */
+  readonly frameObservations: UpdateChannel<number | undefined>;
   /** Internal raw visible-time channel used by lifecycle-aware timers. */
   readonly activeTime: UpdateChannel<number>;
   readonly fixedUpdate: UpdateChannel<FixedUpdateContext>;

@@ -176,3 +176,14 @@ async function createAudioHarness() {
     loadSounds: () => loader.load('secondary'),
   };
 }
+
+it('retains applied mute for analytics when a preview facade overrides the preference getter', async () => {
+  const harness = await createAudioHarness();
+  harness.audio.update({ allowed: true, volume: 1 });
+  harness.audio.setMuted(true);
+  Object.defineProperty(harness.audio, 'muted', { get: () => false });
+  expect(harness.audio.muted).toBe(false);
+  expect(harness.audio.isMuted()).toBe(true);
+  harness.audio.setMuted(false);
+  expect(harness.audio.isMuted()).toBe(false);
+});

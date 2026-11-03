@@ -23,6 +23,13 @@ playable.container.append(message);
 action through the selected host. Implement your own ad interactions and endcard; the runtime supplies
 completion state and policy. Do not substitute an arbitrary navigation for the host store API.
 
+Store requests may optionally identify their source: `playable.openStore({ source: 'persistent_cta' })`.
+The exported `OpenStoreOptions` / `PlayableCtaSource` types support persistent CTA, end-card,
+banner, teaser tap, gameplay tap, automatic redirect and unknown sources. This only adds
+`cta_source` to `replayable_cta`; it never implies a gameplay outcome. No-argument calls remain valid.
+See [analytics context](../guide/studio-fork.md#frame-rate-effective-mute-and-store-attribution-preview-6)
+for the shared `avg_fps` and `audio_muted` event properties.
+
 ## Assets, audio and time
 
 `loader.load('secondary')` explicitly loads deferred assets. Repeated bundle requests share the

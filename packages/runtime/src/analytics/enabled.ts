@@ -1,4 +1,5 @@
 import { createAnalyticsTransport } from '#analytics-transport';
+import { createFrameMetrics } from '#analytics/frame-metrics.js';
 import type {
   AnalyticsController,
   CreateAnalyticsOptions,
@@ -6,6 +7,7 @@ import type {
   RuntimeAnalyticsEventDefinition,
 } from '#types/analytics.js';
 import type { PlayableCompletionReason } from '#types/completion.js';
+import type { PlayableCtaSource } from '#types/store.js';
 
 const maximumEventsPerName = 32;
 const maximumEventsPerSession = 256;
@@ -33,8 +35,14 @@ export function createAnalytics(options: CreateAnalyticsOptions): AnalyticsContr
   let sequence = 0;
   let started = false;
   let startedTime = 0;
+  let metrics: ReturnType<typeof createFrameMetrics> | undefined;
 
-  function send(eventName: string, integerValue?: number, terminal = false): void {
+  function send(
+    eventName: string,
+    integerValue?: number,
+    terminal = false,
+    ctaSource?: PlayableCtaSource,
+  ): void {
     if (!started || eventCount >= maximumEventsPerSession) {
       return;
     }
@@ -46,7 +54,11 @@ export function createAnalytics(options: CreateAnalyticsOptions): AnalyticsContr
 
     const now = performance.now();
     const state = options.getState();
+    const avgFps = metrics?.value;
     const event: NormalizedAnalyticsEvent = {
+      audioMuted: options.getAudioMuted(),
+      ...(avgFps === undefined ? {} : { avgFps }),
+      ...(ctaSource === undefined ? {} : { ctaSource }),
       buildId: config.buildId,
       ...(config.releaseVersion === undefined ? {} : { releaseVersion: config.releaseVersion }),
       elapsedMs: Math.max(0, Math.round(now - startedTime)),
@@ -67,6 +79,9 @@ export function createAnalytics(options: CreateAnalyticsOptions): AnalyticsContr
 
     previousTime = now;
     eventCount += 1;
+    if (eventCount >= maximumEventsPerSession) {
+      metrics?.dispose();
+    }
     counts.set(eventName, nameCount + 1);
 
     if (config.logging) {
@@ -90,8 +105,8 @@ export function createAnalytics(options: CreateAnalyticsOptions): AnalyticsContr
     recordCompletion(reason) {
       send('replayable_completed', completionValues[reason], true);
     },
-    recordCta() {
-      send('replayable_cta', undefined, true);
+    recordCta(source = 'unknown') {
+      send('replayable_cta', undefined, true, source);
     },
     recordFirstInteraction() {
       if (!started) {
@@ -105,6 +120,7 @@ export function createAnalytics(options: CreateAnalyticsOptions): AnalyticsContr
         return;
       }
       started = true;
+      metrics = createFrameMetrics(options.frameObservations, () => options.getState().visible);
       startedTime = performance.now();
       previousTime = startedTime;
       send('replayable_started');

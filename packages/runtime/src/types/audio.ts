@@ -74,6 +74,8 @@ export interface RuntimeAudioState {
 
 /** Internal audio facade controls retained by the runtime lifecycle. */
 export interface AudioController extends PlayableAudio {
+  /** Internal applied mute, unaffected by a development preview's preference facade. */
+  isMuted(): boolean;
   /** Applies a host visibility transition to the underlying audio context. */
   setVisible(visible: boolean): void;
   /** Applies the latest effective host and interaction conditions. */

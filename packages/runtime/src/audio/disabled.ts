@@ -27,6 +27,7 @@ const disabledPlayback: AudioPlayback = {
  * all intentionally ignored.
  */
 const disabledAudio: AudioController = {
+  isMuted: () => true,
   get muted(): boolean {
     return true;
   },

@@ -39,6 +39,9 @@ function createPostHogPayload(projectToken: string, event: NormalizedAnalyticsEv
     properties: {
       $process_person_profile: false,
       build_id: event.buildId,
+      audio_muted: event.audioMuted,
+      ...(event.avgFps === undefined ? {} : { avg_fps: event.avgFps }),
+      ...(event.ctaSource === undefined ? {} : { cta_source: event.ctaSource }),
       ...(event.releaseVersion === undefined ? {} : { release_version: event.releaseVersion }),
       elapsed_ms: event.elapsedMs,
       height: event.height,

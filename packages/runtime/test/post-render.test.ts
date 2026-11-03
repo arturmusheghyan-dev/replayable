@@ -108,3 +108,28 @@ it('skips removed post-render listeners and stops when the last listener unsubsc
   processFrame(132);
   expect(second).not.toHaveBeenCalled();
 });
+
+it('passive frame observations never create or retain scheduling demand', () => {
+  const updates = createUpdates();
+  const observed = vi.fn<(timestamp: number | undefined) => void>();
+  const removeObservation = updates.frameObservations.add(observed);
+  updates.markReady();
+  updates.setVisible(true);
+  processFrame(100);
+  expect(observed.mock.calls.filter(([timestamp]) => timestamp !== undefined)).toEqual([]);
+  const removeUpdate = updates.update.add(() => {});
+  processFrame(120);
+  processFrame(140);
+  expect(observed.mock.calls.filter(([timestamp]) => timestamp !== undefined)).toEqual([
+    [120],
+    [140],
+  ]);
+  removeUpdate();
+  processFrame(200);
+  expect(observed).toHaveBeenLastCalledWith(undefined);
+  const removeResumed = updates.update.add(() => {});
+  processFrame(1000);
+  expect(observed).toHaveBeenLastCalledWith(1000);
+  removeResumed();
+  removeObservation();
+});
