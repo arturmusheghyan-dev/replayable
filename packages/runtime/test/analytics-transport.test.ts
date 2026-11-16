@@ -135,6 +135,8 @@ describe('analytics transport', () => {
       runtime: { language: 'en', network: 'meta', version: 'default' },
     });
     analytics.start();
+    analytics.setEventContext('zones_created', { active_skin: 'burger' });
+    analytics.setEventContext('zones_created', null);
     analytics.track('zones_created', 2);
     analytics.recordFirstInteraction();
     analytics.recordCompletion('success');
@@ -177,3 +179,46 @@ it.each([
     expect(fetch.mock.calls[0]![1]?.body).toBe(body);
   },
 );
+
+it('serializes string context without allowing reserved or optional metadata overrides', () => {
+  const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(new Response());
+  vi.stubGlobal('fetch', fetch);
+  const { avgFps: _fps, releaseVersion: _release, ...base } = event;
+  createAnalyticsTransport(destination).send(
+    {
+      ...base,
+      eventName: 'intro_completed',
+      integerValue: 4200,
+      context: {
+        active_skin: 'burger',
+        audio_muted: 'wrong',
+        integer_value: 'wrong',
+        distinct_id: 'wrong',
+        avg_fps: 'wrong',
+        release_version: 'wrong',
+        cta_source: 'wrong',
+        $process_person_profile: 'true',
+      },
+    },
+    { terminal: false },
+  );
+  const body = fetch.mock.calls[0]![1]?.body;
+  if (typeof body !== 'string') {
+    throw new Error('Expected JSON body');
+  }
+  const payload = JSON.parse(body);
+  expect(payload).toMatchObject({
+    event: 'intro_completed',
+    distinct_id: 'test-session',
+    properties: {
+      active_skin: 'burger',
+      integer_value: 4200,
+      audio_muted: false,
+      $process_person_profile: false,
+    },
+  });
+  expect(payload.properties).not.toHaveProperty('avg_fps');
+  expect(payload.properties).not.toHaveProperty('release_version');
+  expect(payload.properties).not.toHaveProperty('cta_source');
+  expect(payload.properties).not.toHaveProperty('distinct_id');
+});

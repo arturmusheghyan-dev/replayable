@@ -4,7 +4,7 @@ The maintained Studio engine is `arturmusheghyan-dev/replayable`, branch `main`.
 
 ## Distribution
 
-Studio consumers install exact GitHub Release archive URLs, not Git branches or upstream npm packages. The current release is `studio-preview.6`, package version `0.1.0-studio-preview.6`. It separates the stable playable identity from the optional package release number while retaining the analytics controls, structured parameters and network support from preview 4. Source manifests retain the upstream source version; only staged archive manifests receive the fork version and fixed internal archive URLs. All eleven public packages use one fork version, including Pixi. Archives are private for npm publication, but installable through their GitHub URLs.
+Studio consumers install exact GitHub Release archive URLs, not Git branches or upstream npm packages. The current release is `studio-preview.7`, package version `0.1.0-studio-preview.7`. It adds event-scoped string context to analytics HTTP payloads while preserving existing event names, integer values, mute/FPS metadata and CTA attribution. Source manifests retain the upstream source version; only staged archive manifests receive the fork version and fixed internal archive URLs. All eleven public packages use one fork version, including Pixi. Archives are private for npm publication, but installable through their GitHub URLs.
 
 Run frozen installation and `pnpm check`, the three example exports, and `pnpm packages:check` first. Commit/push the reviewed source to this fork's main and require CI's three platform checks to pass. From that clean, built commit run:
 
@@ -109,6 +109,20 @@ Sampling continues through completion/end-card rendering for subsequent CTA even
 `replayable_cta`. The exported `PlayableCtaSource` type supports `persistent_cta`, `cta_endcard`,
 `banner`, `teaser_tap`, `gameplay_tap`, `auto_redirect`, and `unknown`. Existing no-argument calls
 report `unknown`. Source attribution never changes host store routing or implies completion.
+For declared custom events, `playable.analytics.setEventContext(name, properties)` replaces
+event-specific string context. Set it before tracking the event; pass `null` to clear it.
+The context is copied into HTTP payload properties, not into the event name or integer value:
+
+```ts
+playable.analytics.setEventContext('intro_completed', { active_skin: 'burger' });
+playable.analytics.track('intro_completed', durationMs);
+```
+
+Context is local to the runtime session and applies only to the named event. Clear it when a
+playable starts a fresh run. Keys use lowercase letters, digits and underscores, start with
+a letter, and contain at most 80 characters. Non-string values and reserved transport/engine
+fields are ignored, including optional metadata when absent. Disabled analytics remains inert.
+
 Custom `analytics.track(name, integerValue?)`, console log lines, schema version 1, event limits,
 and the disabled-analytics path are unchanged. PostHog fetch and terminal beacon use the same
 properties. Logs/Studio's existing observer continue showing event names and integer values only.

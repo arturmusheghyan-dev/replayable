@@ -1,4 +1,5 @@
 import { createAnalyticsTransport } from '#analytics-transport';
+import { snapshotEventContext } from '#analytics/event-context.js';
 import { createFrameMetrics } from '#analytics/frame-metrics.js';
 import type {
   AnalyticsController,
@@ -28,6 +29,7 @@ export function createAnalytics(options: CreateAnalyticsOptions): AnalyticsContr
   const transport =
     config.destination === false ? undefined : createAnalyticsTransport(config.destination);
   const counts = new Map<string, number>();
+  const contexts = new Map<string, Readonly<Record<string, string>>>();
   const sessionId = createSessionId();
   let eventCount = 0;
   let pendingFirstInteraction = false;
@@ -55,7 +57,9 @@ export function createAnalytics(options: CreateAnalyticsOptions): AnalyticsContr
     const now = performance.now();
     const state = options.getState();
     const avgFps = metrics?.value;
+    const context = contexts.get(eventName);
     const event: NormalizedAnalyticsEvent = {
+      ...(context === undefined ? {} : { context: { ...context } }),
       audioMuted: options.getAudioMuted(),
       ...(avgFps === undefined ? {} : { avgFps }),
       ...(ctaSource === undefined ? {} : { ctaSource }),
@@ -134,6 +138,16 @@ export function createAnalytics(options: CreateAnalyticsOptions): AnalyticsContr
       if (pendingFirstInteraction) {
         pendingFirstInteraction = false;
         send('replayable_first_interaction');
+      }
+    },
+    setEventContext(eventName, properties) {
+      if (!Object.hasOwn(config.events, eventName)) {
+        return;
+      }
+      if (properties === null) {
+        contexts.delete(eventName);
+      } else {
+        contexts.set(eventName, snapshotEventContext(properties));
       }
     },
     track(eventName, integerValue) {

@@ -360,3 +360,31 @@ it.each([
     integerValue,
   });
 });
+
+it('snapshots event-scoped context, replaces it, clears it and isolates sessions', () => {
+  transport.send.mockClear();
+  const analytics = createAnalytics(testOptions());
+  const context = { active_skin: 'burger', audio_muted: 'wrong' };
+  analytics.setEventContext('counted', context);
+  context.active_skin = 'watermelon';
+  analytics.setEventContext('replayable_started', { active_skin: 'wrong' });
+  analytics.start();
+  expect(transport.send.mock.calls.at(-1)![0]).not.toHaveProperty('context');
+  analytics.track('counted', 0);
+  const captured = transport.send.mock.calls.at(-1)![0];
+  expect(captured).toMatchObject({ integerValue: 0, context: { active_skin: 'burger' } });
+  expect(captured.context).not.toHaveProperty('audio_muted');
+  analytics.setEventContext('counted', { active_skin: 'watermelon' });
+  analytics.track('counted', 1);
+  expect(transport.send.mock.calls.at(-1)![0].context).toEqual({ active_skin: 'watermelon' });
+  expect(captured.context).toEqual({ active_skin: 'burger' });
+  analytics.recordCta();
+  expect(transport.send.mock.calls.at(-1)![0]).not.toHaveProperty('context');
+  analytics.setEventContext('counted', null);
+  analytics.track('counted', 2);
+  expect(transport.send.mock.calls.at(-1)![0]).not.toHaveProperty('context');
+  const fresh = createAnalytics(testOptions());
+  fresh.start();
+  fresh.track('counted', 0);
+  expect(transport.send.mock.calls.at(-1)![0]).not.toHaveProperty('context');
+});

@@ -4,6 +4,8 @@ import type {
   RuntimeAnalyticsDestination,
 } from '#types/analytics.js';
 
+import { snapshotEventContext } from '../event-context.js';
+
 export function createAnalyticsTransport(
   destination: RuntimeAnalyticsDestination,
 ): AnalyticsTransport {
@@ -37,6 +39,7 @@ function createPostHogPayload(projectToken: string, event: NormalizedAnalyticsEv
     distinct_id: event.sessionId,
     event: event.eventName,
     properties: {
+      ...snapshotEventContext(event.context ?? {}),
       $process_person_profile: false,
       build_id: event.buildId,
       audio_muted: event.audioMuted,

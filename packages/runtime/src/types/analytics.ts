@@ -5,6 +5,8 @@ import type { PostRenderContext, UpdateChannel } from './update.js';
 
 /** Playable-owned analytics API. Custom events must be declared in project configuration. */
 export interface PlayableAnalytics {
+  /** Replaces string context for one declared event; null clears it. Context is session-local. */
+  setEventContext(eventName: string, properties: Readonly<Record<string, string>> | null): void;
   track(eventName: string, integerValue?: number): void;
 }
 
@@ -34,6 +36,7 @@ export type RuntimeAnalyticsConfig =
     };
 
 export interface NormalizedAnalyticsEvent {
+  readonly context?: Readonly<Record<string, string>>;
   readonly audioMuted: boolean;
   readonly avgFps?: number;
   readonly ctaSource?: PlayableCtaSource;

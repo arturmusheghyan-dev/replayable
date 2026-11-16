@@ -17,8 +17,8 @@ import { fileURLToPath } from 'node:url';
 import { invokePackageManager } from './pnpm-utils.ts';
 
 export const repository = 'arturmusheghyan-dev/replayable';
-export const tag = 'studio-preview.6';
-export const version = '0.1.0-studio-preview.6';
+export const tag = 'studio-preview.7';
+export const version = '0.1.0-studio-preview.7';
 type Dependencies = Record<string, string>;
 interface PackageManifest {
   name: string;

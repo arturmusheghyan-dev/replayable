@@ -5,6 +5,7 @@ const disabledAnalytics: AnalyticsController = {
   recordCta() {},
   recordFirstInteraction() {},
   start() {},
+  setEventContext() {},
   track() {},
 };
 
