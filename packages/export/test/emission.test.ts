@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-import { emitExportProject } from '../src/emission/emit-export-project.js';
+import { writeExportArtifacts } from '../src/emission/write-export-artifacts.js';
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof fs>();
@@ -31,14 +31,18 @@ afterEach(async () => {
   await fs.rm(directory, { recursive: true, force: true });
 });
 
-function emit(): ReturnType<typeof emitExportProject> {
-  return emitExportProject({ outputDirectory, variants: [] }, [
-    {
-      content: 'new export',
-      outputFile: join(outputDirectory, 'preview_default_en.html'),
-      variantId: 'default/preview/en',
-    },
-  ]);
+async function emit() {
+  const variants = await writeExportArtifacts(outputDirectory, async (staging) => {
+    await fs.writeFile(join(staging, 'preview_default_en.html'), 'new export');
+    return [
+      {
+        file: join(outputDirectory, 'preview_default_en.html'),
+        size: 10,
+        variantId: 'default/preview/en',
+      },
+    ];
+  });
+  return { variants };
 }
 
 it('replaces successful exports and removes staging files', async () => {
@@ -84,4 +88,36 @@ it('supports a first export without an existing destination', async () => {
   expect(await fs.readFile(join(outputDirectory, 'preview_default_en.html'), 'utf8')).toBe(
     'new export',
   );
+});
+
+it('rejects a destination redirected before staging', async () => {
+  const outside = join(directory, 'other');
+  await fs.mkdir(outside);
+  await fs.writeFile(join(outside, 'keep.html'), 'unrelated');
+  await fs.rename(outputDirectory, join(directory, 'original'));
+  await fs.symlink(outside, outputDirectory, 'junction');
+  await expect(emit()).rejects.toThrow('redirected export directory');
+  expect(await fs.readFile(join(outside, 'keep.html'), 'utf8')).toBe('unrelated');
+  expect(
+    (await fs.readdir(directory)).some((name) => name.startsWith('.replayable-exports-')),
+  ).toBe(false);
+});
+
+it('rechecks redirection after preparation without moving another destination', async () => {
+  const outside = join(directory, 'other');
+  await fs.mkdir(outside);
+  await fs.writeFile(join(outside, 'keep.html'), 'unrelated');
+  await expect(
+    writeExportArtifacts(outputDirectory, async (staging) => {
+      await fs.writeFile(join(staging, 'new.html'), 'new');
+      await fs.rename(outputDirectory, join(directory, 'original'));
+      await fs.symlink(outside, outputDirectory, 'junction');
+      return [];
+    }),
+  ).rejects.toThrow('redirected export directory');
+  expect(await fs.readFile(join(outside, 'keep.html'), 'utf8')).toBe('unrelated');
+  expect(await fs.readFile(join(directory, 'original', 'previous.html'), 'utf8')).toBe('previous');
+  expect(
+    (await fs.readdir(directory)).some((name) => name.startsWith('.replayable-exports-')),
+  ).toBe(false);
 });

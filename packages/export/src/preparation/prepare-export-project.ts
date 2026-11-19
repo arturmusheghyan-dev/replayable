@@ -9,23 +9,54 @@ import { prepareSnapchatExport } from '#preparation/networks/snapchat.js';
 import { prepareUnityExport } from '#preparation/networks/unity.js';
 import type { PreparedExportArtifact } from '#types/artifact.js';
 import type { ExportProjectContext, ExportVariantContext } from '#types/context.js';
+import type { ExportVariantResult } from '#types/export.js';
 
-/** Prepares every network artifact in memory without changing existing exports. */
-export function prepareExportProject(
+/** Prepares at most two artifacts at once, releasing each payload after its staged write. */
+export async function prepareExportProject(
   project: ExportProjectContext,
-): Promise<PreparedExportArtifact[]> {
-  return Promise.all(project.variants.map(prepareExportVariant));
+  write: (artifact: PreparedExportArtifact) => Promise<void>,
+): Promise<ExportVariantResult[]> {
+  const results: ExportVariantResult[] = new Array(project.variants.length);
+  let next = 0;
+  let failure: { error: unknown } | undefined;
+
+  async function worker(): Promise<void> {
+    while (!failure) {
+      const index = next++;
+      const context = project.variants[index];
+      if (!context) {
+        return;
+      }
+      try {
+        results[index] = await prepareAndWrite(context, write);
+      } catch (error) {
+        failure ??= { error };
+      }
+    }
+  }
+
+  // Workers catch preparation/write errors so all in-flight writes settle before
+  // the caller can remove staging. Never schedule another variant after failure.
+  await Promise.all(Array.from({ length: Math.min(2, project.variants.length) }, worker));
+  if (failure) {
+    throw failure.error;
+  }
+  return results;
 }
 
-/** Prepares one resolved variant and keeps its destination beside the content. */
-async function prepareExportVariant(
+/** Scope the payload to this call; only lightweight metadata escapes to the result list. */
+async function prepareAndWrite(
   context: ExportVariantContext,
-): Promise<PreparedExportArtifact> {
-  return {
-    content: await prepareExportContent(context),
-    outputFile: context.outputFile,
+  write: (artifact: PreparedExportArtifact) => Promise<void>,
+): Promise<ExportVariantResult> {
+  const content = await prepareExportContent(context);
+  const result = {
+    file: context.outputFile,
+    size: typeof content === 'string' ? Buffer.byteLength(content) : content.byteLength,
     variantId: context.variant.id,
   };
+  await write({ content, outputFile: context.outputFile, variantId: context.variant.id });
+  return result;
 }
 
 /** Applies the delivery rules owned by the resolved variant's network. */

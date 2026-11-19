@@ -130,3 +130,15 @@ const exportOptions = {
 The engine chooses the extension; labels and callbacks must omit it and cannot supply
 directories or unsafe filename characters. Exact, case-only and Unicode-normalization
 filename collisions are rejected before emission.
+
+## Memory and replacement safety
+
+Exports are prepared by two workers and written immediately into an operation-owned
+`.replayable-exports-*` sibling directory. Completed contents are not accumulated for
+the full matrix. The returned variant metadata keeps configuration order.
+
+Existing exports are replaced only after all preparation and writes succeed. Failures
+stop new work and await in-flight writes before cleanup. Replacement errors restore
+previous exports where possible; a failed restore retains its backup and reports the
+path. Ignore the reserved temporary prefix in Git and retain reported recovery backups.
+Abrupt termination and concurrent standalone exports are outside this recovery guarantee.

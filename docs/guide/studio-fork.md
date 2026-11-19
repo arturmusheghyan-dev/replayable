@@ -4,7 +4,7 @@ The maintained Studio engine is `arturmusheghyan-dev/replayable`, branch `main`.
 
 ## Distribution
 
-Studio consumers install exact GitHub Release archive URLs, not Git branches or upstream npm packages. The current release is `studio-preview.7`, package version `0.1.0-studio-preview.7`. It adds event-scoped string context to analytics HTTP payloads while preserving existing event names, integer values, mute/FPS metadata and CTA attribution. Source manifests retain the upstream source version; only staged archive manifests receive the fork version and fixed internal archive URLs. All eleven public packages use one fork version, including Pixi. Archives are private for npm publication, but installable through their GitHub URLs.
+Studio consumers install exact GitHub Release archive URLs, not Git branches or upstream npm packages. The current release is `studio-preview.8`, package version `0.1.0-studio-preview.8`. It bounds export preparation to two workers and stages completed files on disk, preserving preview 7 analytics and all network validation. Source manifests retain the upstream source version; only staged archive manifests receive the fork version and fixed internal archive URLs. All eleven public packages use one fork version, including Pixi. Archives are private for npm publication, but installable through their GitHub URLs.
 
 Run frozen installation and `pnpm check`, the three example exports, and `pnpm packages:check` first. Commit/push the reviewed source to this fork's main and require CI's three platform checks to pass. From that clean, built commit run:
 
@@ -131,3 +131,22 @@ Completion retains success 0, failure 1, skip 2, duration timeout 3, inactivity 
 Consumers must report the real terminal gameplay outcome once, before a noninteractive teaser,
 and must not infer success merely from showing an end card or requesting a store redirect.
 Old exports retain their old payloads until rebuilt; publishing packages does not migrate consumers.
+
+## Large export matrices (preview 8)
+
+Export prepares and writes at most two variants concurrently. Completed payloads are
+released after their staged writes; only ordered filenames, IDs and byte sizes remain
+in memory. No CLI/configuration changes or increased Node heap allowance are required.
+The public export API and network formats/limits are unchanged.
+
+Temporary sibling directories use the reserved `.replayable-exports-*` prefix. Ignore
+this generated prefix in source control. On an awaited failure, workers settle before
+cleanup; previous exports remain intact until the complete replacement is ready. If
+replacement rollback fails, the error identifies the retained backup. Never delete that
+recovery copy automatically. Abrupt process termination may leave staging on disk;
+this is not a crash-recovery journal or a lock against concurrent standalone exporters.
+
+Adopt all declared Replayable packages and lockfile pins together. Keep preview 7 for
+rollback. PL133 is the initial adoption target; templates and other playables are not
+automatically upgraded. This release does not change playable release numbers or
+publish their previews.
