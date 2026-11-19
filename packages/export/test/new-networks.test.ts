@@ -94,6 +94,7 @@ it.each(['adn', 'tiktok', 'snapchat'] as const)(
   },
 );
 
+// A real 24-artifact matrix uses bounded workers and filesystem I/O on all CI platforms.
 it('keeps destination identity and custom labels across a mixed version/language matrix', async () => {
   const config = await fixture({
     versions: { pl103_001: {}, pl103_002: {} },
@@ -121,7 +122,7 @@ it('keeps destination identity and custom labels across a mixed version/language
       `_${variant.network === 'meta' ? 'facebook' : variant.network}_`,
     );
   }
-});
+}, 30_000);
 
 it('packages only the Snapchat delivery files, excluding maps and development files', async () => {
   const config = await fixture();
