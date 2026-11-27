@@ -99,7 +99,9 @@ export function createAnalytics(options: CreateAnalyticsOptions): AnalyticsContr
     }
 
     try {
-      transport?.send(event, { terminal });
+      if (options.canSend?.() !== false) {
+        transport?.send(event, { terminal });
+      }
     } catch {
       // Analytics must never interrupt gameplay.
     }

@@ -4,7 +4,7 @@ The maintained Studio engine is `arturmusheghyan-dev/replayable`, branch `main`.
 
 ## Distribution
 
-Studio consumers install exact GitHub Release archive URLs, not Git branches or upstream npm packages. The current release is `studio-preview.8`, package version `0.1.0-studio-preview.8`. It bounds export preparation to two workers and stages completed files on disk, preserving preview 7 analytics and all network validation. Source manifests retain the upstream source version; only staged archive manifests receive the fork version and fixed internal archive URLs. All eleven public packages use one fork version, including Pixi. Archives are private for npm publication, but installable through their GitHub URLs.
+Studio consumers install exact GitHub Release archive URLs, not Git branches or upstream npm packages. The current release is `studio-preview.9`, package version `0.1.0-studio-preview.9`. It adds SDK-absent browser fallback while preserving preview 8 bounded export preparation, analytics and all network validation. Source manifests retain the upstream source version; only staged archive manifests receive the fork version and fixed internal archive URLs. All eleven public packages use one fork version, including Pixi. Archives are private for npm publication, but installable through their GitHub URLs.
 
 Run frozen installation and `pnpm check`, the three example exports, and `pnpm packages:check` first. Commit/push the reviewed source to this fork's main and require CI's three platform checks to pass. From that clean, built commit run:
 
@@ -150,3 +150,39 @@ Adopt all declared Replayable packages and lockfile pins together. Keep preview 
 rollback. PL133 is the initial adoption target; templates and other playables are not
 automatically upgraded. This release does not change playable release numbers or
 publish their previews.
+
+## Browser fallback (preview 9)
+
+Rebuilt ad-network exports can run without an advertising SDK on a local file or
+ordinary HTTP/HTTPS host. No hostname or user-agent allowlist is used. After document
+bootstrap, the adapter selects its environment once: an absent host uses browser
+visibility, viewport and interaction-gated audio; a present host keeps its original
+readiness, viewability, volume and campaign CTA behavior. A loading or malformed SDK
+never falls back after a timeout or error. No SDK globals or host callbacks are faked.
+SDKs injected asynchronously after document bootstrap are outside this detection
+contract; their integration must make the SDK available before playable initialization.
+
+Browser fallback preserves the configured network identity and console analytics logs,
+but suppresses all outbound Replayable analytics, including completion and CTA events.
+This does not alter explicitly configured analytics on the Preview network or third-party
+gameplay scripts. Real host delivery retains its configured analytics routes.
+
+Browser CTA opens the configured store URL where the network's export rules permit it.
+Snapchat and Moloco instead log the CTA: their artifacts must not contain redirect code.
+With an SDK, every network retains its original API, including Liftoff's campaign-owned
+argumentless open and Mintegral/TikTok's install callback. Browser popup restrictions and
+user-interaction requirements still apply.
+
+Double-click self-contained HTML exports to test them locally. For ZIP formats, extract
+all files together and serve the folder over HTTP/HTTPS; module/resource archives are
+not guaranteed to work through file URLs. Upload the same files to a static host for
+hosted testing. A missing network-owned script such as mraid.js can appear in the browser
+console outside an ad host; the fallback does not supply a counterfeit SDK. Native SDK
+scripts, validators, formats, size limits and network restrictions remain unchanged.
+
+The browser fallback builds passed user testing locally and hosted on 27 November 2026.
+It is included in studio-preview.9; existing exports and consumers on older pins do not
+change. Adopt all eleven matching fork packages through exact release URLs. Template
+main and template/gameplay adopt this release; other playables keep their existing pins.
+Keep studio-preview.8 available for rollback. Browser fallback testing does not certify
+acceptance by an ad network.

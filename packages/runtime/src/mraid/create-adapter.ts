@@ -1,3 +1,5 @@
+import { openBrowserStore } from '#adapters/browser/open-store.js';
+import { withBrowserFallback } from '#adapters/browser/with-fallback.js';
 import { FULL_VOLUME } from '#lifecycle/volume.js';
 import type { HostAdapter, HostSnapshot, HostUpdateListener } from '#types/host-adapter.js';
 import type { MraidApi } from '#types/mraid.js';
@@ -13,7 +15,7 @@ declare const mraid: MraidApi;
  * the authored store URL directly through `mraid.open(url)`.
  */
 export function createMraidHostAdapter(): HostAdapter {
-  return {
+  const native: HostAdapter = {
     async initialize(listener): Promise<HostSnapshot> {
       requireMraid();
       await waitForMraidReady();
@@ -35,6 +37,7 @@ export function createMraidHostAdapter(): HostAdapter {
       mraid.open(url);
     },
   };
+  return withBrowserFallback(native, () => typeof mraid !== 'undefined', openBrowserStore);
 }
 
 /**

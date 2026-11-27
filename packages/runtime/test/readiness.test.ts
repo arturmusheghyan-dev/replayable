@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { CreateAnalyticsOptions } from '../src/types/analytics.js';
 import type { Assets } from '../src/types/assets.js';
 import type { HostAdapter } from '../src/types/host-adapter.js';
 import type { Playable, RuntimeDefinition, RuntimeState } from '../src/types/runtime.js';
@@ -22,10 +23,25 @@ const harness = vi.hoisted(() => {
     initializeScreen: vi.fn<typeof initializeScreen>(initializeScreen),
     load: vi.fn<typeof load>(load),
     markReady: vi.fn<typeof markReady>(markReady),
+    analyticsOptions: undefined as CreateAnalyticsOptions | undefined,
     primaryLoad,
     screenInitialization,
   };
 });
+
+vi.mock('#analytics', () => ({
+  createAnalytics: (options: CreateAnalyticsOptions) => {
+    harness.analyticsOptions = options;
+    return {
+      start() {},
+      recordCompletion() {},
+      recordCta() {},
+      recordFirstInteraction() {},
+      setEventContext() {},
+      track() {},
+    };
+  },
+}));
 
 vi.mock('#audio', () => ({
   createAudio: () => ({
@@ -88,6 +104,7 @@ describe('runtime readiness', () => {
       definition: createRuntimeDefinition(),
     });
 
+    expect(harness.analyticsOptions?.canSend?.()).toBe(false);
     expect(() => runtime.state).toThrow('Await playable.ready() first.');
     expect(runtime.config.params).toEqual({
       tutorial: { enabled: false, text: '', delay: 0, color: '#AaBbCc', speed: -0.25, mode: 'one' },
@@ -115,6 +132,7 @@ describe('runtime readiness', () => {
     harness.primaryLoad.resolve();
     await readiness;
 
+    expect(harness.analyticsOptions?.canSend?.()).toBe(true);
     expect(runtime.state.visible).toBe(true);
     expect(notifyReady).toHaveBeenCalledOnce();
     expect(stateObservedAtMarkReady?.visible).toBe(true);
@@ -138,6 +156,27 @@ describe('runtime readiness', () => {
     expect(() => runtime.complete('failure')).toThrow(
       'Playable already completed with reason "success".',
     );
+  });
+  it('keeps analytics delivery closed after a browser fallback initializes', async () => {
+    harness.primaryLoad.resolve();
+    harness.screenInitialization.resolve();
+    harness.markReady.mockReset();
+    const { createRuntime } = await import('../src/lifecycle/create-runtime.js');
+    const adapter = createHostAdapter({ openStore() {} });
+    const runtime = createRuntime({
+      adapter: {
+        ...adapter,
+        async initialize(listener) {
+          return { ...(await adapter.initialize(listener)), browserFallback: true };
+        },
+      },
+      assets: { primary: {} },
+      definition: createRuntimeDefinition(),
+    });
+    expect(harness.analyticsOptions?.canSend?.()).toBe(false);
+    await runtime.ready();
+    expect(runtime.state.visible).toBe(true);
+    expect(harness.analyticsOptions?.canSend?.()).toBe(false);
   });
 });
 

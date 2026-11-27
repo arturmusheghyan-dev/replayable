@@ -2,6 +2,8 @@ import type { RuntimeViewport } from './screen.js';
 
 /** Host-owned values captured after its SDK or browser environment becomes ready. */
 export interface HostSnapshot {
+  /** Internal host selection signal; browser tests must not send production analytics. */
+  readonly browserFallback?: boolean;
   /** Host-provided volume normalized from silent (`0`) to full volume (`1`). */
   readonly volume: number;
   /** Whether the host currently considers the playable viewable. */

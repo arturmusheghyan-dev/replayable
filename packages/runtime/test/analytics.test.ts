@@ -87,6 +87,19 @@ describe('analytics', () => {
     }
   });
 
+  it('keeps logging but suppresses all transport sends when the host delivery gate is closed', () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const analytics = createAnalytics({ ...testOptions({ logging: true }), canSend: () => false });
+    analytics.start();
+    analytics.track('counted', 3);
+    analytics.recordFirstInteraction();
+    analytics.recordCompletion('success');
+    analytics.recordCta();
+    expect(transport.send).not.toHaveBeenCalled();
+    expect(log).toHaveBeenCalledWith('[Analytics] counted: 3');
+    expect(log).toHaveBeenCalledWith('[Analytics] replayable_completed: 0');
+  });
+
   it('omits release metadata for legacy IDs without guessing from their suffix', () => {
     const analytics = createAnalytics(testOptions({ buildId: 'legacy@2.3.4' }));
     analytics.start();

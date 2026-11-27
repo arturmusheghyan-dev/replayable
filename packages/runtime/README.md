@@ -33,3 +33,11 @@ their accompanying license terms.
 Optional analytics is disabled by default and routed explicitly per network. The current main branch preserves Studio structured parameters alongside the public `playable.analytics.track` API. See [configuration, events and fork package releases](../../docs/guide/studio-fork.md).
 
 The current source supports simple console analytics logs and independent sending controls, globally or per network. Logs contain only the event name and optional integer value. Log-only variants do not initialize a network transport. These settings require fork release `studio-preview.3` or later.
+
+## Browser fallback (preview 9)
+
+Network adapters select browser lifecycle behavior when their host SDK is absent after
+bootstrap. Present SDKs keep native readiness, visibility, volume and CTA handling.
+Fallback sessions suppress outbound analytics while preserving configured console logs.
+Snapchat/Moloco fallback CTAs log only; other supported networks can open the store URL.
+See the [fallback contract and testing instructions](../../docs/guide/studio-fork.md#browser-fallback-preview-9).

@@ -1,3 +1,5 @@
+import { openBrowserStore } from '#adapters/browser/open-store.js';
+import { withBrowserFallback } from '#adapters/browser/with-fallback.js';
 import { FULL_VOLUME } from '#lifecycle/volume.js';
 import { readMraidViewport, requireMraid, waitForMraidReady } from '#mraid/api.js';
 import { subscribeToMraidUpdates } from '#mraid/events.js';
@@ -18,7 +20,7 @@ declare const mraid: MraidApi;
 export function createAdapter(): HostAdapter {
   let activeLiftoff: LiftoffApi | undefined;
 
-  return {
+  const native: HostAdapter = {
     async initialize(listener): Promise<HostSnapshot> {
       requireMraid();
       await waitForMraidReady();
@@ -53,6 +55,11 @@ export function createAdapter(): HostAdapter {
       mraid.open();
     },
   };
+  return withBrowserFallback(
+    native,
+    () => typeof mraid !== 'undefined' || (window as LiftoffWindow).Liftoff !== undefined,
+    openBrowserStore,
+  );
 }
 
 /** Resolves after Liftoff declares its campaign click API safe to call. */

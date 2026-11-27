@@ -1,3 +1,5 @@
+import { openBrowserStore } from '#adapters/browser/open-store.js';
+import { withBrowserFallback } from '#adapters/browser/with-fallback.js';
 import type { HostAdapter } from '#types/host-adapter.js';
 
 import { createBrowserAdapter } from '../browser/create-adapter.js';
@@ -14,7 +16,8 @@ declare const ExitApi: {
  * records the CTA and opens the campaign-owned destination.
  */
 export function createAdapter(): HostAdapter {
-  return createBrowserAdapter(() => {
+  const native = createBrowserAdapter(() => {
     ExitApi.exit();
   });
+  return withBrowserFallback(native, () => typeof ExitApi !== 'undefined', openBrowserStore);
 }

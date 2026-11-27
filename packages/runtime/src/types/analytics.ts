@@ -70,6 +70,8 @@ export interface AnalyticsController extends PlayableAnalytics {
 }
 
 export interface CreateAnalyticsOptions {
+  /** Internal delivery gate resolved by host initialization; logging stays enabled. */
+  readonly canSend?: () => boolean;
   readonly config: RuntimeAnalyticsConfig;
   readonly getState: () => RuntimeState;
   readonly getAudioMuted: () => boolean;

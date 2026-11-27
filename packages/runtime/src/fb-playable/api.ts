@@ -2,6 +2,11 @@ import type { FbPlayableApi } from '#types/host-apis.js';
 
 declare const FbPlayableAd: FbPlayableApi | undefined;
 
+/** Presence, including a malformed host, prevents browser fallback. */
+export function hasFbPlayableHost(): boolean {
+  return typeof FbPlayableAd !== 'undefined';
+}
+
 /**
  * Opens the campaign destination through the exact API required by both Meta
  * and Moloco playable containers.

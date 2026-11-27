@@ -35,7 +35,9 @@ export function createRuntime({ adapter, assets, definition }: CreateRuntimeOpti
   const localization = createLocalization(config.localization, loader);
   const audio = createAudio(loader);
   const runtimeUpdates = createRuntimeUpdates();
+  let analyticsDeliveryAllowed = false;
   const analytics = createAnalytics({
+    canSend: () => analyticsDeliveryAllowed,
     config: config.analytics,
     getState: () => runtimeState.get(),
     getAudioMuted: () => audio.isMuted() || !runtimeState.get().audio.allowed,
@@ -130,6 +132,7 @@ export function createRuntime({ adapter, assets, definition }: CreateRuntimeOpti
       screen.initialize(),
     ]);
 
+    analyticsDeliveryAllowed = snapshot.browserFallback !== true;
     runtimeUpdates.setVisible(snapshot.visible);
     runtimeState.initialize(snapshot);
     handleAudioChange(runtimeState.get().audio);

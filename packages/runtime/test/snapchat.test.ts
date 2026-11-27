@@ -20,7 +20,12 @@ it('starts with browser visibility and forwards resize and background changes', 
   const { document, window } = browser();
   const listener = vi.fn<HostUpdateListener>();
   const snapshot = await createAdapter().initialize(listener);
-  expect(snapshot).toEqual({ visible: true, volume: 1, viewport: { width: 400, height: 800 } });
+  expect(snapshot).toEqual({
+    browserFallback: true,
+    visible: true,
+    volume: 1,
+    viewport: { width: 400, height: 800 },
+  });
   document.visibilityState = 'hidden';
   document.dispatchEvent(new Event('visibilitychange'));
   expect(listener).toHaveBeenLastCalledWith({ type: 'visibilitychange', visible: false });
@@ -45,6 +50,7 @@ it('waits for document readiness and invokes the host CTA only on a store action
   });
   await Promise.resolve();
   expect(ready).toBe(false);
+  document.readyState = 'interactive';
   document.dispatchEvent(new Event('DOMContentLoaded'));
   await initialization;
   expect(onCTAClick).not.toHaveBeenCalled();

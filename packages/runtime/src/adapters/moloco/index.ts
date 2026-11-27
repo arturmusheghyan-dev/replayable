@@ -1,4 +1,6 @@
-import { openFbPlayableStore } from '#fb-playable/api.js';
+import { logBrowserStore } from '#adapters/browser/log-store.js';
+import { withBrowserFallback } from '#adapters/browser/with-fallback.js';
+import { hasFbPlayableHost, openFbPlayableStore } from '#fb-playable/api.js';
 import type { HostAdapter } from '#types/host-adapter.js';
 
 import { createBrowserAdapter } from '../browser/create-adapter.js';
@@ -9,5 +11,9 @@ import { createBrowserAdapter } from '../browser/create-adapter.js';
  * browser signals provide viewport and visibility lifecycle state.
  */
 export function createAdapter(): HostAdapter {
-  return createBrowserAdapter(openFbPlayableStore);
+  return withBrowserFallback(
+    createBrowserAdapter(openFbPlayableStore),
+    hasFbPlayableHost,
+    logBrowserStore,
+  );
 }

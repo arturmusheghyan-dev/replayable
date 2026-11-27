@@ -4,6 +4,8 @@ import {
   waitForDocumentReady,
 } from '#adapters/browser/api.js';
 import { subscribeToBrowserUpdates } from '#adapters/browser/events.js';
+import { openBrowserStore } from '#adapters/browser/open-store.js';
+import { withBrowserFallback } from '#adapters/browser/with-fallback.js';
 import { FULL_VOLUME } from '#lifecycle/volume.js';
 import type { HostAdapter, HostSnapshot } from '#types/host-adapter.js';
 import type { MintegralWindow } from '#types/host-apis.js';
@@ -18,7 +20,7 @@ import type { MintegralWindow } from '#types/host-apis.js';
 export function createAdapter(): HostAdapter {
   const host = window as MintegralWindow;
 
-  return {
+  const native: HostAdapter = {
     async initialize(listener): Promise<HostSnapshot> {
       await waitForDocumentReady();
 
@@ -70,4 +72,14 @@ export function createAdapter(): HostAdapter {
       host.install?.();
     },
   };
+  return withBrowserFallback(
+    native,
+    () =>
+      host.gameReady !== undefined ||
+      host.install !== undefined ||
+      host.gameEnd !== undefined ||
+      host.gameStart !== undefined ||
+      host.gameClose !== undefined,
+    openBrowserStore,
+  );
 }
